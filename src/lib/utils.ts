@@ -13,3 +13,16 @@ export function slugify(input: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
 }
+
+/**
+ * Prepends "https://" to a URL-ish string that's missing a scheme, e.g.
+ * "garrettcreates.com" -> "https://garrettcreates.com". Leaves already-schemed
+ * URLs (http://, https://, or any other `scheme:`) untouched. Empty input
+ * stays empty.
+ */
+export function normalizeUrl(input: string): string {
+  const trimmed = input.trim()
+  if (!trimmed) return trimmed
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
+}

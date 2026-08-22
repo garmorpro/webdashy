@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { normalizeUrl } from "@/lib/utils";
 import { ClientStatus } from "@prisma/client";
 
 export type ClientActionState = { error?: string };
@@ -11,13 +12,14 @@ function readClientFields(formData: FormData) {
   const get = (key: string) => String(formData.get(key) ?? "").trim();
 
   const estimatedValueRaw = get("estimatedValue");
+  const websiteRaw = get("website");
 
   return {
     businessName: get("businessName"),
     contactName: get("contactName"),
     email: get("email"),
     phone: get("phone") || null,
-    website: get("website") || null,
+    website: websiteRaw ? normalizeUrl(websiteRaw) : null,
     industry: get("industry") || null,
     status: (get("status") || "LEAD") as ClientStatus,
     leadSource: get("leadSource") || null,

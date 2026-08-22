@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CLIENT_STATUSES, CLIENT_STATUS_LABELS } from "@/lib/client-status";
+import { normalizeUrl } from "@/lib/utils";
 import type { ClientActionState } from "@/lib/actions/clients";
 import type { ClientStatus } from "@prisma/client";
 
@@ -66,6 +67,7 @@ export function ClientForm({
 }) {
   const values = { ...emptyValues, ...defaultValues };
   const [state, formAction] = useActionState(action, {});
+  const [website, setWebsite] = useState(values.website);
 
   return (
     <form action={formAction} className="max-w-2xl space-y-6">
@@ -103,7 +105,16 @@ export function ClientForm({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="website">Website</Label>
-            <Input id="website" name="website" type="url" defaultValue={values.website} />
+            <Input
+              id="website"
+              name="website"
+              type="text"
+              inputMode="url"
+              placeholder="example.com"
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              onBlur={(e) => setWebsite(normalizeUrl(e.target.value))}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="industry">Industry</Label>
