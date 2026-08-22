@@ -119,6 +119,12 @@ export async function updateClient(
   redirect(`/clients/${clientId}`);
 }
 
+export async function archiveClient(clientId: string) {
+  await db.client.update({ where: { id: clientId }, data: { status: "LOST" } });
+  revalidatePath("/clients");
+  revalidatePath(`/clients/${clientId}`);
+}
+
 export async function deleteClient(clientId: string) {
   try {
     // Client -> Portal is onDelete: Cascade, so this also removes any
