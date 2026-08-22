@@ -115,7 +115,7 @@ _Update this section as phases complete._
 
 - [ ] Phase 1 — Foundation (app shell, nav, design system done; admin authentication still outstanding)
 - [x] Phase 2 — Template Library (schema/migrations, full CRUD, search/filters, detail page — verified live on the VM, 2026-08-22; screenshot *upload* deferred — thumbnail/screenshot fields take a pasted URL for now, no storage pipeline yet)
-- [ ] Phase 3 — Clients
+- [x] Phase 3 — Clients (full CRUD, status tracking — verified live on the VM, 2026-08-22; "Template Portal" section on the client record intentionally deferred to Phase 4)
 - [ ] Phase 4 — Portal Builder
 - [ ] Phase 5 — Public Portal
 - [ ] Phase 6 — Tracking
