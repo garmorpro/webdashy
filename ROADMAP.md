@@ -116,8 +116,12 @@ _Update this section as phases complete._
 - [ ] Phase 1 — Foundation (app shell, nav, design system done; admin authentication still outstanding)
 - [x] Phase 2 — Template Library (schema/migrations, full CRUD, search/filters, detail page — verified live on the VM, 2026-08-22; screenshot *upload* deferred — thumbnail/screenshot fields take a pasted URL for now, no storage pipeline yet)
 - [x] Phase 3 — Clients (full CRUD, status tracking — verified live on the VM, 2026-08-22; "Template Portal" section on the client record intentionally deferred to Phase 4)
-- [ ] Phase 4 — Portal Builder
-- [ ] Phase 5 — Public Portal
-- [ ] Phase 6 — Tracking
-- [ ] Phase 7 — Dashboard
+- [x] Phase 4 — Portal Builder (create/edit templates flow, unique token, copy link — verified live on the VM, 2026-08-22; later extended with a modal wizard + row actions on the Clients list)
+- [x] Phase 5 — Public Portal (full client-facing selection flow, confirm → success screen, email notification on selection — verified live on the VM, 2026-08-22)
+- [ ] Phase 6 — Tracking (viewCount/firstViewedAt/lastViewedAt, PortalEvent logging, activity feed — not started; Portals/Clients pages currently show real structure but viewCount stays honestly at 0)
+- [ ] Phase 7 — Dashboard (still mock data — natural to build after Phase 6 gives it something real to show)
 - [ ] Phase 8 — Polish
+
+**Also done, outside the phase list**: real brand colors/logo throughout (admin + public portal), row actions (Start Portal wizard, Edit, Archive, Delete) on Clients, row actions (Copy Link, Open, Edit Templates, Disable, Reset Selection) on Portals.
+
+**Biggest open gap**: admin authentication (§25) — the app is currently reachable by anyone with the URL, no login at all. Has been deferred every time it's come up in favor of feature work; worth revisiting soon given how much real functionality now sits behind that missing door.
