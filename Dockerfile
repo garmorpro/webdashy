@@ -15,6 +15,10 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json ./
+# package.json's postinstall runs `prisma generate`, which needs the schema
+# present — copy just that in before installing (full source comes later,
+# in the builder stage, to keep this layer cache-friendly on source edits).
+COPY prisma ./prisma
 RUN npm ci
 
 # --- builder: generate Prisma client + build Next.js ---
