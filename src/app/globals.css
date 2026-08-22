@@ -50,74 +50,76 @@
 
 :root {
   /* WebDashy design system — see ARCHITECTURE.md §8 / product-build.md §22.
-     Light gray app background, white cards, dark navy text, blue primary
-     actions, thin neutral borders, soft shadows, generous rounding. */
+     Brand palette: navy #1B2951 + lime #A4FF4F (from the logo). Light gray
+     app background, white cards, navy text, lime primary actions, thin
+     neutral borders (kept neutral on purpose — not brand-colored, per
+     product-build.md's "thin neutral borders" direction), soft shadows. */
   --background: #f8fafc; /* slate-50 */
-  --foreground: #0f172a; /* slate-900, dark navy */
+  --foreground: #1b2951; /* brand navy */
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: #1b2951;
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #2563eb; /* blue-600 */
-  --primary-foreground: #ffffff;
+  --popover-foreground: #1b2951;
+  --primary: #a4ff4f; /* brand lime */
+  --primary-foreground: #1b2951; /* navy text on lime — bright bg needs dark text */
   --secondary: #f1f5f9; /* slate-100 */
-  --secondary-foreground: #0f172a;
+  --secondary-foreground: #1b2951;
   --muted: #f1f5f9;
   --muted-foreground: #64748b; /* slate-500 */
-  --accent: #eff6ff; /* blue-50 */
-  --accent-foreground: #1e3a8a; /* blue-900 */
+  --accent: #f0ffdf; /* pale lime tint */
+  --accent-foreground: #1b2951;
   --destructive: #dc2626;
   --border: #e2e8f0; /* slate-200 */
   --input: #e2e8f0;
-  --ring: #2563eb;
-  --chart-1: #2563eb;
-  --chart-2: #0ea5e9;
+  --ring: #a4ff4f;
+  --chart-1: #a4ff4f;
+  --chart-2: #1b2951;
   --chart-3: #64748b;
   --chart-4: #94a3b8;
   --chart-5: #cbd5e1;
   --radius: 0.75rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #0f172a;
-  --sidebar-primary: #2563eb;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #eff6ff;
-  --sidebar-accent-foreground: #1e3a8a;
+  --sidebar-foreground: #1b2951;
+  --sidebar-primary: #a4ff4f;
+  --sidebar-primary-foreground: #1b2951;
+  --sidebar-accent: #f0ffdf;
+  --sidebar-accent-foreground: #1b2951;
   --sidebar-border: #e2e8f0;
-  --sidebar-ring: #2563eb;
+  --sidebar-ring: #a4ff4f;
 }
 
 .dark {
-  --background: #0b1220;
+  --background: #1b2951; /* brand navy, used directly as the dark surface */
   --foreground: #e2e8f0;
-  --card: #111a2e;
+  --card: #22315c;
   --card-foreground: #e2e8f0;
-  --popover: #111a2e;
+  --popover: #22315c;
   --popover-foreground: #e2e8f0;
-  --primary: #3b82f6;
-  --primary-foreground: #0b1220;
-  --secondary: #1c2942;
+  --primary: #a4ff4f;
+  --primary-foreground: #1b2951;
+  --secondary: #2a3a68;
   --secondary-foreground: #e2e8f0;
-  --muted: #1c2942;
+  --muted: #2a3a68;
   --muted-foreground: #94a3b8;
-  --accent: #1c2942;
-  --accent-foreground: #93c5fd;
+  --accent: #2c3a2a; /* dark lime-tinted chip */
+  --accent-foreground: #d4ffb0;
   --destructive: #f87171;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: #3b82f6;
-  --chart-1: #3b82f6;
-  --chart-2: #38bdf8;
-  --chart-3: #94a3b8;
-  --chart-4: #64748b;
-  --chart-5: #475569;
-  --sidebar: #0e1526;
+  --ring: #a4ff4f;
+  --chart-1: #a4ff4f;
+  --chart-2: #94a3b8;
+  --chart-3: #64748b;
+  --chart-4: #475569;
+  --chart-5: #2a3a68;
+  --sidebar: #17213f;
   --sidebar-foreground: #e2e8f0;
-  --sidebar-primary: #3b82f6;
-  --sidebar-primary-foreground: #0b1220;
-  --sidebar-accent: #1c2942;
-  --sidebar-accent-foreground: #93c5fd;
+  --sidebar-primary: #a4ff4f;
+  --sidebar-primary-foreground: #1b2951;
+  --sidebar-accent: #2c3a2a;
+  --sidebar-accent-foreground: #d4ffb0;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #3b82f6;
+  --sidebar-ring: #a4ff4f;
 }
 
 @layer base {

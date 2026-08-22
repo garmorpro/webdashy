@@ -17,7 +17,7 @@ export function PortalSuccess({
 
       <h2 className="mt-6 text-2xl font-semibold text-slate-900">Great choice!</h2>
       <p className="mt-2 text-sm text-slate-500">You selected:</p>
-      <p className="mt-1 text-xl font-semibold text-blue-600">{templateName}</p>
+      <p className="mt-1 text-xl font-semibold text-[#1b2951]">{templateName}</p>
 
       <p className="mt-6 max-w-sm text-sm text-slate-500">
         I&apos;ll be notified of your selection and can begin working with you on your website.

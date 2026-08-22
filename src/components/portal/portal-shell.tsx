@@ -16,7 +16,7 @@ export function PortalShell({
 }) {
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 px-4 py-10 text-center sm:py-14">
+      <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-[#1b2951] px-4 py-10 text-center sm:py-14">
         <div className="mx-auto flex max-w-3xl flex-col items-center">
           <div className="flex items-center gap-2 text-white/90">
             <Image
@@ -33,7 +33,7 @@ export function PortalShell({
           <div className="mt-6 h-px w-16 bg-white/20" />
 
           <h1 className="mt-6 text-2xl font-semibold text-white sm:text-3xl">{clientName}</h1>
-          <p className="mt-1 text-sm font-medium uppercase tracking-wide text-blue-300">
+          <p className="mt-1 text-sm font-medium uppercase tracking-wide text-lime-300">
             Website Template Selection
           </p>
 

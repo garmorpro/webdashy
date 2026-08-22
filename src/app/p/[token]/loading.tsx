@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function PortalLoading() {
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 px-4 py-14 text-center">
+      <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-[#1b2951] px-4 py-14 text-center">
         <div className="mx-auto flex max-w-3xl flex-col items-center gap-3">
           <Skeleton className="h-7 w-28 bg-white/10" />
           <Skeleton className="mt-4 h-8 w-56 bg-white/10" />
