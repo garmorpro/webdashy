@@ -113,8 +113,8 @@ Not to be started until MVP is working end-to-end (product-build.md §32):
 
 _Update this section as phases complete._
 
-- [ ] Phase 1 — Foundation
-- [ ] Phase 2 — Template Library
+- [ ] Phase 1 — Foundation (app shell, nav, design system done; admin authentication still outstanding)
+- [ ] Phase 2 — Template Library (schema/migrations, CRUD, search/filters, detail page done; screenshot *upload* deferred — thumbnail/screenshot fields take a pasted URL for now, no storage pipeline yet)
 - [ ] Phase 3 — Clients
 - [ ] Phase 4 — Portal Builder
 - [ ] Phase 5 — Public Portal

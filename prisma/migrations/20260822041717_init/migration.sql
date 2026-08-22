@@ -1,3 +1,6 @@
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
@@ -36,6 +39,7 @@ CREATE TABLE "Template" (
     "mobileScreenshotUrl" TEXT,
     "previewUrl" TEXT,
     "repositoryUrl" TEXT,
+    "isFavorite" BOOLEAN NOT NULL DEFAULT false,
     "status" "TemplateStatus" NOT NULL DEFAULT 'DRAFT',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

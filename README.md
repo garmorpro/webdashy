@@ -38,7 +38,7 @@ Target: from "add a client" to "send a portal link" in under two minutes.
 
 ## Project Status
 
-Phase 1 (Foundation) is mostly in place: Next.js/TypeScript/Tailwind/shadcn/Prisma are configured, the admin shell and navigation exist, and the Templates page is built against mock data. Admin authentication is still outstanding. See [ROADMAP.md](./ROADMAP.md) for full phase status.
+Phase 1 (Foundation) and Phase 2 (Template Library) are largely in place: the admin shell/nav, Prisma schema + initial migration, and full Template CRUD (list with search/filters, create, edit, archive, delete) are working against a real database. Admin authentication is still outstanding, and template screenshots are pasted URLs for now rather than uploaded files. See [ROADMAP.md](./ROADMAP.md) for full phase status.
 
 ## Getting Started
 
@@ -57,6 +57,8 @@ npm run build        # production build
 npm run lint          # eslint
 npm run db:generate   # regenerate the Prisma client after schema changes
 npm run db:migrate    # create/apply a migration in development
+npm run db:deploy     # apply pending migrations (production)
+npm run db:seed       # seed reference categories
 npm run db:studio     # browse the database with Prisma Studio
 ```
 
