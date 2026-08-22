@@ -119,6 +119,11 @@ curl -I https://webdashy.com
 
 Should return `200`. Direct IP access from your local network (`http://<vm-ip>/`) keeps working too — that's the LAN-only fallback, not a public path (there's no public IP for the outside world to reach it on).
 
+**If a fresh/just-changed tunnel route doesn't resolve right away**: this is normal DNS propagation, not a broken config. Two things to know so you don't chase a phantom bug:
+
+- A brand new Tunnel public hostname route can take a few minutes to fully propagate a proper dual-stack (A + AAAA) DNS record across Cloudflare's edge — right after creating/changing one, it's possible to briefly see only an `AAAA` (IPv6) record and no `A` (IPv4) one, which will fail to connect from an IPv6-less network. Query Cloudflare's own resolver directly to check the current authoritative state, bypassing any local caching: `dig @1.1.1.1 A webdashy.com +short`.
+- **Test from a real external client** (your phone on cellular, or any machine off this VM/LAN), not `curl` on the VM itself. The VM's own local DNS resolver can cache a stale "no record" answer from before propagation finished, and keep failing long after the real world has moved on — that's a local-cache artifact, not a sign anything is actually broken. (`sudo resolvectl flush-caches` clears it if you want the VM's own testing to catch up, but it's not required for real visitors.)
+
 ## Maintenance Notes
 
 - **Backups**: the Postgres data lives in the `webdashy_db_data` Docker volume. Back it up regularly, e.g. `docker compose exec db pg_dump -U $POSTGRES_USER $POSTGRES_DB > backup.sql`.
