@@ -82,7 +82,7 @@
   --sidebar-foreground: #1b2951;
   --sidebar-primary: #a4ff4f;
   --sidebar-primary-foreground: #1b2951;
-  --sidebar-accent: #f0ffdf;
+  --sidebar-accent: #a4ff4f; /* full brand lime — needs to pop as the active-nav indicator, a pale tint read as barely-there */
   --sidebar-accent-foreground: #1b2951;
   --sidebar-border: #e2e8f0;
   --sidebar-ring: #a4ff4f;
