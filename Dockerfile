@@ -14,7 +14,13 @@ FROM node:${NODE_VERSION} AS deps
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
-COPY package.json package-lock.json ./
+# .npmrc (legacy-peer-deps=true — see that file's own comment) MUST be
+# copied in before `npm ci` runs, in both this stage and prod-deps below —
+# npm only reads it from the current working directory. Forgetting this
+# copy once already broke a real deploy: npm ci failed on next-auth's
+# unrelated/unused nodemailer peer, exactly the conflict .npmrc exists to
+# suppress, because the file simply wasn't present yet when npm ran.
+COPY package.json package-lock.json .npmrc ./
 # package.json's postinstall runs `prisma generate`, which needs the schema
 # present — copy just that in before installing (full source comes later,
 # in the builder stage, to keep this layer cache-friendly on source edits).
@@ -32,7 +38,7 @@ FROM node:${NODE_VERSION} AS prod-deps
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
     && rm -rf /var/lib/apt/lists/*
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 COPY prisma ./prisma
 RUN npm ci --omit=dev
 
