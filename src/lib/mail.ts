@@ -1,4 +1,6 @@
+import path from "path";
 import nodemailer from "nodemailer";
+import { renderSelectionEmail } from "@/lib/email-templates";
 
 let transporter: nodemailer.Transporter | null | undefined;
 
@@ -49,17 +51,25 @@ export async function sendSelectionNotification({
     timeStyle: "short",
   }).format(selectedAt);
 
+  const html = renderSelectionEmail({ clientName, templateName, dateStr, clientAdminUrl });
+  const text = `${clientName} just selected "${templateName}" for their website.\n${dateStr}\n\nView their record: ${clientAdminUrl}`;
+
   try {
     await t.sendMail({
       from: `WebDashy <${process.env.GMAIL_USER}>`,
       to,
       subject: `${clientName} selected a template — ${templateName}`,
-      text: `${clientName} just selected "${templateName}" for their website (${dateStr}).\n\nView their record: ${clientAdminUrl}`,
-      html: `
-        <p><strong>${clientName}</strong> just selected <strong>${templateName}</strong> for their website.</p>
-        <p style="color:#64748b;font-size:14px;">${dateStr}</p>
-        <p><a href="${clientAdminUrl}" style="color:#1b2951;">View their record in WebDashy</a></p>
-      `,
+      text,
+      html,
+      // Embedded (not a remote URL) so the logo always renders regardless
+      // of whether the app is reachable when the recipient opens the email.
+      attachments: [
+        {
+          filename: "wordmark.png",
+          path: path.join(process.cwd(), "public/brand/wordmark-dark.png"),
+          cid: "wordmark",
+        },
+      ],
     });
   } catch (err) {
     // Best-effort — a failed email must never surface as an error to the
