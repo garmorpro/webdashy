@@ -54,15 +54,15 @@ This brings up:
 - `app` — the WebDashy Next.js app (built from the repo's `Dockerfile`)
 - `nginx` — reverse proxy on port 80, forwarding to `app:3000`
 
-First boot needs the database schema created:
+Visit `http://<vm-ip>/` — you should see the WebDashy dashboard (currently backed by mock data, not the database). That confirms the VM, Docker, Postgres, app, and Nginx are all working end-to-end.
+
+A Prisma schema already exists ([prisma/schema.prisma](./prisma/schema.prisma)), but no migrations have been generated yet — that's Phase 2 (Template Library) work, since generating the initial migration requires a live Postgres connection to diff against. Once Phase 2 lands with real migrations committed to the repo, first boot on a new environment will need:
 
 ```bash
 docker compose exec app npx prisma migrate deploy
 ```
 
-(Until the first real migration is committed, `npx prisma db push` also works to sync the schema for development purposes — see ROADMAP.md Phase 2+.)
-
-Visit `http://<vm-ip>/` — you should see the WebDashy dashboard. That confirms the VM, Docker, Postgres, app, and Nginx are all working end-to-end.
+Until then this command is a no-op (nothing to deploy).
 
 ## Ongoing deploys
 
