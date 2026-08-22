@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
+import { getAbsoluteUrl } from "@/lib/site-url";
+import { sendSelectionNotification } from "@/lib/mail";
 import { Prisma } from "@prisma/client";
 
 export type ConfirmSelectionState = { error?: string };
@@ -21,7 +23,11 @@ export async function confirmPortalSelection(
 ): Promise<ConfirmSelectionState> {
   const portal = await db.portal.findUnique({
     where: { token },
-    include: { templates: true, selection: true },
+    include: {
+      client: true,
+      templates: { include: { template: true } },
+      selection: true,
+    },
   });
 
   if (!portal) return { error: "This portal link is no longer valid." };
@@ -35,15 +41,16 @@ export async function confirmPortalSelection(
     return {};
   }
 
-  const isValidTemplate = portal.templates.some((t) => t.templateId === templateId);
-  if (!isValidTemplate) {
+  const chosen = portal.templates.find((t) => t.templateId === templateId);
+  if (!chosen) {
     return {
       error: "That template isn't part of this selection. Please choose one of the options shown.",
     };
   }
 
+  let selectedAt: Date;
   try {
-    await db.$transaction([
+    const [created] = await db.$transaction([
       db.templateSelection.create({
         data: { portalId: portal.id, templateId },
       }),
@@ -56,6 +63,7 @@ export async function confirmPortalSelection(
         data: { status: "TEMPLATE_SELECTED" },
       }),
     ]);
+    selectedAt = created.selectedAt;
   } catch (err) {
     // Unique constraint on TemplateSelection.portalId — a concurrent
     // request already recorded a selection. Treat as success rather than
@@ -72,5 +80,15 @@ export async function confirmPortalSelection(
   revalidatePath("/clients");
   revalidatePath(`/clients/${portal.clientId}`);
   revalidatePath("/portals");
+
+  // Best-effort — see sendSelectionNotification's own error handling. Never
+  // let email trouble affect the response to the client who just selected.
+  await sendSelectionNotification({
+    clientName: portal.client.businessName,
+    templateName: chosen.template.name,
+    selectedAt,
+    clientAdminUrl: await getAbsoluteUrl(`/clients/${portal.clientId}`),
+  });
+
   return {};
 }

@@ -38,7 +38,7 @@ Target: from "add a client" to "send a portal link" in under two minutes.
 
 ## Project Status
 
-Phase 1 (Foundation) and Phase 2 (Template Library) are largely in place: the admin shell/nav, Prisma schema + initial migration, and full Template CRUD (list with search/filters, create, edit, archive, delete) are working against a real database. Admin authentication is still outstanding, and template screenshots are pasted URLs for now rather than uploaded files. See [ROADMAP.md](./ROADMAP.md) for full phase status.
+Phases 1–5 are live: the admin shell, full Template and Client CRUD, the Portal Builder (select templates, generate a unique link), and the public `/p/[token]` selection page with email notification on selection. Admin authentication is still outstanding — the app is currently reachable by anyone with the URL — and template screenshots are pasted URLs for now rather than uploaded files. See [ROADMAP.md](./ROADMAP.md) for full phase status.
 
 ## Getting Started
 
@@ -48,7 +48,7 @@ cp .env.example .env   # then set DATABASE_URL to a real Postgres instance
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The admin shell, sidebar navigation, and Templates page (with mock data) are live; Clients, Portals, and Settings are placeholder routes pending later roadmap phases.
+Open [http://localhost:3000](http://localhost:3000). Templates, Clients, and Portals are all backed by real data; Settings is still a placeholder route.
 
 Useful scripts:
 
@@ -68,6 +68,7 @@ Never commit real values — use [.env.example](./.env.example) as the template 
 
 - `DATABASE_URL` — PostgreSQL connection string (required)
 - `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` — used by the `db` service in [docker-compose.yml](./docker-compose.yml)
+- `GMAIL_USER` / `GMAIL_APP_PASSWORD` / `NOTIFY_EMAIL_TO` — email notification when a client selects a template. Optional — if unset, notifications are silently skipped (the selection itself still works). `GMAIL_APP_PASSWORD` must be a Google [App Password](https://myaccount.google.com/apppasswords), not the account's regular password.
 - Admin auth provider credentials — not wired up yet; documented here once chosen (see ARCHITECTURE.md §9 Open Decisions)
 
 ## Development Rules
