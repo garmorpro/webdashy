@@ -9,6 +9,7 @@ Think **Template Library + Lightweight CRM + Client Selection Portal**.
 Full product specification: [product-build.md](./product-build.md)
 Technical design: [ARCHITECTURE.md](./ARCHITECTURE.md)
 Build plan: [ROADMAP.md](./ROADMAP.md)
+Server setup & deploys: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ---
 

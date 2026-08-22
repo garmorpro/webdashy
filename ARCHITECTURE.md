@@ -27,7 +27,7 @@ These two surfaces must stay logically separated in code (routing, layouts, comp
 | ORM | Prisma |
 | Admin authentication | Auth.js (or equivalent — Clerk / Supabase Auth are acceptable alternatives) |
 | Client portal "authentication" | None — unguessable random token in the URL |
-| Deployment | Docker-compatible, self-hostable |
+| Deployment | Docker-compatible, self-hostable — Ubuntu Server VM on Proxmox, see [DEPLOYMENT.md](./DEPLOYMENT.md) |
 
 Rationale for swapping the auth provider, if it happens, should be recorded here.
 
