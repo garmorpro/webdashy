@@ -1,18 +1,9 @@
-import Link from "next/link";
 import { Link2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
-import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { PORTAL_STATUS_LABELS, PORTAL_STATUS_STYLES } from "@/lib/portal-status";
+import { PortalsTable, type PortalRow } from "@/components/admin/portals-table";
+import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +17,20 @@ export default async function PortalsPage() {
     },
   });
 
-  const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+  const rows: PortalRow[] = await Promise.all(
+    portals.map(async (portal) => ({
+      id: portal.id,
+      clientId: portal.clientId,
+      clientName: portal.client.businessName,
+      status: portal.status,
+      templateCount: portal.templates.length,
+      viewCount: portal.viewCount,
+      selectedTemplateName: portal.selection?.template.name ?? null,
+      createdAt: portal.createdAt,
+      updatedAt: portal.updatedAt,
+      portalUrl: await getAbsoluteUrl(`/p/${portal.token}`),
+    }))
+  );
 
   return (
     <div>
@@ -35,55 +39,14 @@ export default async function PortalsPage() {
         subtitle="Track every client portal you've generated — status, views, and selections."
       />
 
-      {portals.length === 0 ? (
+      {rows.length === 0 ? (
         <EmptyState
           icon={Link2}
           title="No template portal yet"
           description="Choose a few templates and create a personalized selection portal for a client to get started."
         />
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Templates</TableHead>
-                <TableHead>Views</TableHead>
-                <TableHead>Selected Template</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last Activity</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {portals.map((portal) => (
-                <TableRow key={portal.id}>
-                  <TableCell>
-                    <Link href={`/clients/${portal.clientId}`} className="font-medium text-foreground hover:underline">
-                      {portal.client.businessName}
-                    </Link>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary" className={PORTAL_STATUS_STYLES[portal.status]}>
-                      {PORTAL_STATUS_LABELS[portal.status]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">{portal.templates.length}</TableCell>
-                  <TableCell className="text-muted-foreground">{portal.viewCount}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {portal.selection?.template.name ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {dateFormatter.format(portal.createdAt)}
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {dateFormatter.format(portal.updatedAt)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <PortalsTable portals={rows} />
       )}
     </div>
   );
