@@ -12,7 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
-    "db:seed": "prisma db seed"
+    "db:seed": "node prisma/seed.mjs"
   },
   "overrides": {
     "deepmerge-ts": "^8.0.0"
