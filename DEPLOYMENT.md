@@ -45,30 +45,24 @@ At minimum, set a strong `POSTGRES_PASSWORD` and update `DATABASE_URL` to match.
 ## Part D — Run the stack
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 docker compose ps
 ```
 
-Right now this brings up:
+This brings up:
 - `db` — Postgres 16
-- `nginx` — reverse proxy on port 80 (currently serves a placeholder page)
+- `app` — the WebDashy Next.js app (built from the repo's `Dockerfile`)
+- `nginx` — reverse proxy on port 80, forwarding to `app:3000`
 
-Visit `http://<vm-ip>/` — you should see:
+First boot needs the database schema created:
 
+```bash
+docker compose exec app npx prisma migrate deploy
 ```
-WebDashy server is up. App container not deployed yet.
-```
 
-That confirms the VM, Docker, and Nginx are all working end-to-end.
+(Until the first real migration is committed, `npx prisma db push` also works to sync the schema for development purposes — see ROADMAP.md Phase 2+.)
 
-## Part E — Adding the app (Phase 1 of ROADMAP.md)
-
-Once the Next.js app and its `Dockerfile` exist in the repo:
-
-1. Uncomment the `app` service in [docker-compose.yml](./docker-compose.yml).
-2. Uncomment the `proxy_pass` block in [nginx/webdashy.conf](./nginx/webdashy.conf) and remove the placeholder `location /` block above it.
-3. On the VM: `git pull`, then `docker compose up -d --build`.
-4. Run Prisma migrations inside the app container (exact command documented here once the app exists), e.g. `docker compose exec app npx prisma migrate deploy`.
+Visit `http://<vm-ip>/` — you should see the WebDashy dashboard. That confirms the VM, Docker, Postgres, app, and Nginx are all working end-to-end.
 
 ## Ongoing deploys
 

@@ -1,0 +1,189 @@
+// WebDashy — Prisma schema
+// Mirrors the data model documented in ARCHITECTURE.md §4.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Admin ---
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// --- Template Library ---
+
+enum TemplateStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+model Template {
+  id                    String   @id @default(cuid())
+  name                  String
+  slug                  String   @unique
+  description           String?
+  categoryId            String?
+  category              Category? @relation(fields: [categoryId], references: [id])
+  thumbnailUrl          String?
+  desktopScreenshotUrl  String?
+  mobileScreenshotUrl   String?
+  previewUrl            String?
+  repositoryUrl         String?
+  status                TemplateStatus @default(DRAFT)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  tags             TemplateTag[]
+  portalTemplates  PortalTemplate[]
+  portalEvents     PortalEvent[]
+  selections       TemplateSelection[]
+
+  @@index([categoryId])
+  @@index([status])
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
+  templates Template[]
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  templates TemplateTag[]
+}
+
+model TemplateTag {
+  templateId String
+  tagId      String
+
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  tag      Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([templateId, tagId])
+}
+
+// --- Clients CRM ---
+
+enum ClientStatus {
+  LEAD
+  CONTACTED
+  INTERESTED
+  PORTAL_SENT
+  VIEWED
+  TEMPLATE_SELECTED
+  BUILDING
+  WON
+  LOST
+}
+
+model Client {
+  id              String       @id @default(cuid())
+  businessName    String
+  contactName     String
+  email           String
+  phone           String?
+  industry        String?
+  status          ClientStatus @default(LEAD)
+  leadSource      String?
+  estimatedValue  Decimal?     @db.Decimal(10, 2)
+  notes           String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  portals Portal[]
+
+  @@index([status])
+}
+
+// --- Portals ---
+
+enum PortalStatus {
+  DRAFT
+  ACTIVE
+  VIEWED
+  SELECTED
+  DISABLED
+}
+
+model Portal {
+  id             String       @id @default(cuid())
+  clientId       String
+  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  token          String       @unique
+  message        String?
+  status         PortalStatus @default(DRAFT)
+  firstViewedAt  DateTime?
+  lastViewedAt   DateTime?
+  viewCount      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  templates  PortalTemplate[]
+  events     PortalEvent[]
+  selection  TemplateSelection?
+
+  @@index([clientId])
+  @@index([token])
+}
+
+model PortalTemplate {
+  id           String @id @default(cuid())
+  portalId     String
+  templateId   String
+  displayOrder Int    @default(0)
+
+  portal   Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([portalId, templateId])
+  @@index([portalId])
+  @@index([templateId])
+}
+
+enum PortalEventType {
+  PORTAL_VIEWED
+  TEMPLATE_PREVIEWED
+  TEMPLATE_SELECTED
+}
+
+model PortalEvent {
+  id         String          @id @default(cuid())
+  portalId   String
+  templateId String?
+  eventType  PortalEventType
+  createdAt  DateTime        @default(now())
+
+  portal   Portal    @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  template Template? @relation(fields: [templateId], references: [id])
+
+  @@index([portalId])
+  @@index([templateId])
+}
+
+model TemplateSelection {
+  id         String   @id @default(cuid())
+  portalId   String   @unique
+  templateId String
+  selectedAt DateTime @default(now())
+
+  portal   Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  template Template @relation(fields: [templateId], references: [id])
+
+  @@index([templateId])
+}

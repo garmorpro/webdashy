@@ -38,26 +38,35 @@ Target: from "add a client" to "send a portal link" in under two minutes.
 
 ## Project Status
 
-Early scaffolding stage — see [ROADMAP.md](./ROADMAP.md) for current phase status.
+Phase 1 (Foundation) is mostly in place: Next.js/TypeScript/Tailwind/shadcn/Prisma are configured, the admin shell and navigation exist, and the Templates page is built against mock data. Admin authentication is still outstanding. See [ROADMAP.md](./ROADMAP.md) for full phase status.
 
 ## Getting Started
 
-_To be filled in once the application is scaffolded (Phase 1 of the roadmap)._
+```bash
+npm install
+cp .env.example .env   # then set DATABASE_URL to a real Postgres instance
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). The admin shell, sidebar navigation, and Templates page (with mock data) are live; Clients, Portals, and Settings are placeholder routes pending later roadmap phases.
+
+Useful scripts:
 
 ```bash
-# planned
-npm install
-npm run dev
+npm run build        # production build
+npm run lint          # eslint
+npm run db:generate   # regenerate the Prisma client after schema changes
+npm run db:migrate    # create/apply a migration in development
+npm run db:studio     # browse the database with Prisma Studio
 ```
 
 ### Environment Variables
 
-_Document required environment variables here as they're introduced. Never commit real values — use `.env.example` as the template and keep `.env` gitignored._
+Never commit real values — use [.env.example](./.env.example) as the template and keep `.env` gitignored.
 
-Anticipated variables:
-
-- `DATABASE_URL` — PostgreSQL connection string
-- Admin auth provider credentials (exact variables depend on the chosen provider)
+- `DATABASE_URL` — PostgreSQL connection string (required)
+- `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` — used by the `db` service in [docker-compose.yml](./docker-compose.yml)
+- Admin auth provider credentials — not wired up yet; documented here once chosen (see ARCHITECTURE.md §9 Open Decisions)
 
 ## Development Rules
 
