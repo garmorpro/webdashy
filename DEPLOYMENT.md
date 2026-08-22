@@ -90,21 +90,44 @@ docker compose exec app npx prisma migrate deploy   # if there are new migration
 |---|---|---|
 | 22 | SSH | Yes (ufw: OpenSSH) |
 | 80 | HTTP (Nginx) | Yes |
-| 443 | HTTPS (Nginx, once TLS is set up) | Yes (allowed now, unused until TLS) |
+| 443 | HTTPS (Nginx, Cloudflare Origin Certificate) | Yes |
 | 5432 | Postgres | No — bound to `127.0.0.1` only inside the VM, not reachable from outside |
 
 ---
 
-## Future: Domain + TLS via Cloudflare
+## Domain + TLS via Cloudflare
 
-Not done yet — revisit once Cloudflare access is available. At that point:
+`webdashy.com` is proxied through Cloudflare with a Cloudflare Origin Certificate on nginx — not Let's Encrypt/Certbot. This is the simpler option specifically because Cloudflare sits in front: Cloudflare trusts its own Origin CA directly, so there's no HTTP-01 challenge, no renewal cron job, and the cert is valid for 15 years.
 
-1. Point an A record at the VM's public/reachable IP in Cloudflare.
-2. On the VM, install Certbot (`sudo apt install certbot python3-certbot-nginx`).
-3. Run `sudo certbot --nginx -d yourdomain.com` — it edits `nginx/webdashy.conf`-equivalent config in place, or you add a second `server` block manually for port 443 with the issued cert paths.
-4. Uncomment the `443:443` port mapping in `docker-compose.yml`.
-5. If Cloudflare proxying (orange cloud) is enabled, set Cloudflare SSL mode to **Full (strict)** once the origin cert is in place.
-6. Update `AUTH_URL` (or equivalent) in `.env` to the real `https://` domain.
+**In the Cloudflare dashboard:**
+
+1. **DNS** → add an `A` record: `webdashy.com` → the VM's public IP. Proxy status: **Proxied** (orange cloud) — this hides the VM's real IP from visitors and gives some DDoS protection for free. Repeat for `www` if you want that to work too.
+2. **SSL/TLS → Overview** → encryption mode: **Full (strict)**.
+3. **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
+4. **SSL/TLS → Origin Server** → **Create Certificate**. Defaults are fine (RSA, covers `webdashy.com` + `*.webdashy.com`, 15 years). This gives you two blocks of text — an **Origin Certificate** and a **Private Key**.
+
+**On the VM** (repo already has the nginx config + compose wiring for this — `git pull` first if you haven't):
+
+```bash
+mkdir -p nginx/certs
+nano nginx/certs/cert.pem   # paste the Origin Certificate block, save
+nano nginx/certs/key.pem    # paste the Private Key block, save
+docker compose up -d --build
+```
+
+These two files live only on the VM — `nginx/certs/` is gitignored (a private key should never be committed, even to a private repo).
+
+**Verify:**
+
+```bash
+curl -I https://webdashy.com
+```
+
+Should return `200` with no certificate warnings. `http://webdashy.com` should 301-redirect to the `https://` version. Direct IP access (`http://<vm-ip>/`) keeps working over plain HTTP as a fallback — a Cloudflare Origin Certificate only covers the domain, not the raw IP, so that path intentionally isn't HTTPS.
+
+No app config changes needed for this — `getAbsoluteUrl()` (used for portal links and the notification email's admin link) already builds URLs from the request's actual `Host`/`X-Forwarded-Proto` headers, so it automatically produces `https://webdashy.com/...` links once traffic arrives through Cloudflare, no hardcoded URL anywhere to update. Same for Auth.js (`trustHost: true`), which needs no `AUTH_URL` override.
+
+**If you ever rotate the Origin Certificate**: replace both files and `docker compose up -d --force-recreate nginx` (see the nginx-config-doesn't-hot-reload gotcha below).
 
 ## Maintenance Notes
 
@@ -112,3 +135,4 @@ Not done yet — revisit once Cloudflare access is available. At that point:
 - **OS updates**: `unattended-upgrades` handles security patches automatically; do a manual `sudo apt update && sudo apt upgrade` periodically too.
 - **Logs**: `docker compose logs -f [service]`.
 - **Disk space**: template screenshots + Postgres data grow over time — monitor with `df -h` and extend the Proxmox virtual disk if needed.
+- **Nginx config changes don't hot-reload**: `docker compose up -d --build` only rebuilds/recreates the `app` service (the one with a `build:` directive) — if you edit `nginx/webdashy.conf` or swap the TLS cert files without touching app code, the already-running `nginx` container keeps its old config in memory. Force it to pick up the change: `docker compose up -d --force-recreate nginx`.

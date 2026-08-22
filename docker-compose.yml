@@ -44,9 +44,12 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      # - "443:443"   # uncomment once TLS/Certbot is set up (see DEPLOYMENT.md)
+      - "443:443"
     volumes:
       - ./nginx/webdashy.conf:/etc/nginx/conf.d/default.conf:ro
+      # Cloudflare Origin Certificate — see DEPLOYMENT.md. This directory
+      # lives only on the VM, never in git (nginx/certs/ is gitignored).
+      - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - app
 
