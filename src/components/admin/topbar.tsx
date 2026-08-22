@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, LayoutTemplate } from "lucide-react";
+import Image from "next/image";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -29,18 +30,14 @@ export function Topbar() {
           </SheetTrigger>
           <SheetContent side="left" className="w-64 bg-sidebar p-0">
             <SheetHeader className="h-16 justify-center border-b border-sidebar-border px-6">
-              <SheetTitle
-                render={
-                  <Link
-                    href="/"
-                    className="flex items-center gap-2 font-semibold text-sidebar-foreground"
-                  />
-                }
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <LayoutTemplate className="h-4 w-4" />
-                </span>
-                WebDashy
+              <SheetTitle render={<Link href="/" className="flex items-center" />}>
+                <Image
+                  src="/brand/wordmark.png"
+                  alt="WebDashy"
+                  width={616}
+                  height={114}
+                  className="h-6 w-auto"
+                />
               </SheetTitle>
             </SheetHeader>
             <div className="flex flex-col justify-between p-4">
@@ -51,7 +48,13 @@ export function Topbar() {
             </div>
           </SheetContent>
         </Sheet>
-        <span className="font-semibold">WebDashy</span>
+        <Image
+          src="/brand/wordmark.png"
+          alt="WebDashy"
+          width={616}
+          height={114}
+          className="h-5 w-auto"
+        />
       </div>
 
       <div className="hidden md:block" />
