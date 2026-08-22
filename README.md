@@ -70,7 +70,7 @@ Never commit real values — use [.env.example](./.env.example) as the template 
 - `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` — used by the `db` service in [docker-compose.yml](./docker-compose.yml)
 - `GMAIL_USER` / `GMAIL_APP_PASSWORD` / `NOTIFY_EMAIL_TO` — email notification when a client selects a template. Optional — if unset, notifications are silently skipped (the selection itself still works). `GMAIL_APP_PASSWORD` must be a Google [App Password](https://myaccount.google.com/apppasswords), not the account's regular password.
 - `AUTH_SECRET` — required. Signs admin session JWTs (Auth.js, Credentials provider). Generate with `openssl rand -base64 32`.
-- `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` — the one V1 admin account. Only read by `npm run db:seed` (not by the running app) — re-run the seed any time after changing `ADMIN_PASSWORD` to reset it.
+- `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` — optional, emergency-recovery only. Your actual admin account is created through `/setup` in the browser (a one-time page, only reachable while the database has no users) — these vars exist purely so `npm run db:seed` can create-or-reset that account by email if you're ever locked out.
 
 ## Development Rules
 

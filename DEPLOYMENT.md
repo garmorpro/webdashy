@@ -43,7 +43,8 @@ nano .env   # or your editor of choice
 At minimum, set:
 - A strong `POSTGRES_PASSWORD`, updated to match inside `DATABASE_URL` too
 - `AUTH_SECRET` — generate with `openssl rand -base64 32`
-- `ADMIN_EMAIL` / `ADMIN_PASSWORD` (and optionally `ADMIN_NAME`) — your login for the admin app
+
+Leave `ADMIN_NAME`/`ADMIN_EMAIL`/`ADMIN_PASSWORD` commented out — your actual account is created in the browser via `/setup` (see Part D), not through `.env`. They're only there for emergency recovery later.
 
 Never commit `.env` — it's gitignored.
 
@@ -59,16 +60,16 @@ This brings up:
 - `app` — the WebDashy Next.js app (built from the repo's `Dockerfile`)
 - `nginx` — reverse proxy on port 80, forwarding to `app:3000`
 
-Then apply migrations and seed reference data + your admin account:
+Then apply migrations and seed reference data (categories only — no admin account, that happens next):
 
 ```bash
 docker compose exec app npx prisma migrate deploy
 docker compose exec app npm run db:seed
 ```
 
-Visit `http://<vm-ip>/` — you should land on the login page. Sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`. That confirms the VM, Docker, Postgres, app, Nginx, and admin auth are all working end-to-end.
+Visit `http://<vm-ip>/setup` — since the database has no users yet, this creates your admin account through a real form (name, email, password). It signs you in automatically once created, and **this page permanently stops working the moment that first account exists** — visiting it again just redirects to `/login`. That confirms the VM, Docker, Postgres, app, Nginx, and admin auth are all working end-to-end.
 
-To reset your admin password later: change `ADMIN_PASSWORD` in `.env` and re-run `docker compose exec app npm run db:seed` — it upserts by email, so this safely updates the existing account rather than creating a duplicate.
+**Locked out later?** Set `ADMIN_EMAIL`/`ADMIN_PASSWORD` in `.env` and run `docker compose exec app npm run db:seed` again — it upserts by email, safely resetting that account rather than creating a duplicate. Unset those vars again afterward.
 
 ## Ongoing deploys
 
