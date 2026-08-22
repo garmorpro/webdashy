@@ -2,9 +2,10 @@ import Image from "next/image";
 
 // The public portal's own visual identity — deliberately does not reuse the
 // admin shell (no sidebar, no login, no admin controls). Dark navy gradient
-// header + white content area, per product-build.md §23. Uses the lime icon
-// mark (not the navy wordmark used elsewhere) — navy-on-navy would vanish
-// against this dark gradient.
+// header + white content area, per product-build.md §23. Uses
+// wordmark-dark.png (the navy "Web" recolored white, "Dashy" kept lime) —
+// the regular navy wordmark used elsewhere would vanish against this dark
+// gradient.
 export function PortalShell({
   clientName,
   message,
@@ -18,17 +19,14 @@ export function PortalShell({
     <div className="min-h-screen bg-slate-50">
       <header className="bg-gradient-to-br from-slate-900 via-slate-900 to-[#1b2951] px-4 py-10 text-center sm:py-14">
         <div className="mx-auto flex max-w-3xl flex-col items-center">
-          <div className="flex items-center gap-2 text-white/90">
-            <Image
-              src="/brand/icon-lime.png"
-              alt="WebDashy"
-              width={467}
-              height={451}
-              priority
-              className="h-6 w-auto"
-            />
-            <span className="text-sm font-medium tracking-wide">WebDashy</span>
-          </div>
+          <Image
+            src="/brand/wordmark-dark.png"
+            alt="WebDashy"
+            width={616}
+            height={114}
+            priority
+            className="h-6 w-auto"
+          />
 
           <div className="mt-6 h-px w-16 bg-white/20" />
 
