@@ -25,7 +25,7 @@ These two surfaces must stay logically separated in code (routing, layouts, comp
 | Component library | shadcn/ui |
 | Database | PostgreSQL |
 | ORM | Prisma |
-| Admin authentication | Auth.js (or equivalent — Clerk / Supabase Auth are acceptable alternatives) |
+| Admin authentication | Auth.js v5, Credentials provider (email + password against `User.passwordHash`, JWT sessions) |
 | Client portal "authentication" | None — unguessable random token in the URL |
 | Deployment | Docker-compatible, self-hostable — Ubuntu Server VM on Proxmox, see [DEPLOYMENT.md](./DEPLOYMENT.md) |
 
@@ -139,8 +139,10 @@ All `/p/[token]` routes must render `noindex` metadata and must resolve data str
 
 ## 6. Authentication & Security
 
-- **Admin routes** are protected by middleware / route-group auth checks. No admin route should be reachable without an authenticated session.
-- **Public portal** has no login. Security is based entirely on the token being long, cryptographically random, and unguessable (e.g., generated with a CSPRNG, not a sequential ID or predictable slug+counter).
+- **Admin routes** are protected by `src/proxy.ts` (Next.js's proxy/middleware, checked on every request before it reaches a page) using [Auth.js](https://authjs.dev) v5 with the Credentials provider — email + password checked against `User.passwordHash` (bcrypt) in Postgres, JWT session strategy (no separate session table). No admin route is reachable without a valid session; unauthenticated requests redirect to `/login` with the original path preserved as `callbackUrl`.
+  - V1 supports exactly one administrator, created via `npm run db:seed` from `ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars (upserted by email — re-running the seed after changing the password resets it). The schema (a real `User` table, not a hardcoded credential) allows adding real multi-user support later without a rework.
+  - Server actions themselves are *not* individually auth-checked — proxy-level protection of the pages that can reach them is the enforced boundary for V1. Revisit if multi-user support or a public write surface beyond the token-scoped portal actions is ever added.
+- **Public portal** has no login. Security is based entirely on the token being long, cryptographically random, and unguessable (e.g., generated with a CSPRNG, not a sequential ID or predictable slug+counter). `/p/[token]` and `/api/auth/*` are explicitly excluded from the proxy's auth check.
 - Public API/data access for a given token must only ever return data belonging to that portal's client — no cross-client leakage, even under enumeration attempts.
 - Public portal pages set `noindex` (and ideally `nofollow`) via metadata to keep them out of search engines.
 - Secrets and credentials are never committed; required environment variables are documented in `README.md`.
@@ -165,7 +167,5 @@ Tracking is intentionally lightweight (see spec §18). Each meaningful client-si
 
 Track architecture decisions still pending here as they come up, e.g.:
 
-- Exact admin auth provider (Auth.js vs Clerk vs Supabase Auth).
-- Image storage/hosting strategy for template screenshots (local vs S3-compatible/object storage vs CDN).
-- Whether route handlers or server actions are used for mutations.
+- Image storage/hosting strategy for template screenshots (local vs S3-compatible/object storage vs CDN) — still open, screenshots are pasted URLs for now.
 - Selection-notification email currently sends via Gmail SMTP as the real Gmail address (displayed as "WebDashy"). Sending as `garrett@webdashy.com` needs DNS access to that domain first (not currently available — see DEPLOYMENT.md), then one of: (a) Cloudflare Email Routing forwarding that address to Gmail so it can be verified as a Gmail "Send mail as" alias, or (b) switching to a transactional provider (Resend/SendGrid) with the domain verified via SPF/DKIM — the more standard approach, and probably the better long-term choice regardless of the domain-sender question.

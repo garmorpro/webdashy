@@ -33,12 +33,12 @@ Target: from "add a client" to "send a portal link" in under two minutes.
 - React + [Tailwind CSS](https://tailwindcss.com/)
 - [shadcn/ui](https://ui.shadcn.com/)
 - PostgreSQL + [Prisma](https://www.prisma.io/)
-- Auth.js (or equivalent) for admin authentication
+- Auth.js v5 (Credentials provider) for admin authentication
 - Docker-compatible, self-hostable
 
 ## Project Status
 
-Phases 1–5 are live: the admin shell, full Template and Client CRUD, the Portal Builder (select templates, generate a unique link), and the public `/p/[token]` selection page with email notification on selection. Admin authentication is still outstanding — the app is currently reachable by anyone with the URL — and template screenshots are pasted URLs for now rather than uploaded files. See [ROADMAP.md](./ROADMAP.md) for full phase status.
+Phases 1–5 are live: the admin shell (now behind real login), full Template and Client CRUD, the Portal Builder (select templates, generate a unique link), and the public `/p/[token]` selection page with email notification on selection. Real portal view/selection tracking (Phase 6) and a live Dashboard (Phase 7) are the next gaps — template screenshots are also still pasted URLs rather than uploaded files. See [ROADMAP.md](./ROADMAP.md) for full phase status.
 
 ## Getting Started
 
@@ -69,7 +69,8 @@ Never commit real values — use [.env.example](./.env.example) as the template 
 - `DATABASE_URL` — PostgreSQL connection string (required)
 - `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` — used by the `db` service in [docker-compose.yml](./docker-compose.yml)
 - `GMAIL_USER` / `GMAIL_APP_PASSWORD` / `NOTIFY_EMAIL_TO` — email notification when a client selects a template. Optional — if unset, notifications are silently skipped (the selection itself still works). `GMAIL_APP_PASSWORD` must be a Google [App Password](https://myaccount.google.com/apppasswords), not the account's regular password.
-- Admin auth provider credentials — not wired up yet; documented here once chosen (see ARCHITECTURE.md §9 Open Decisions)
+- `AUTH_SECRET` — required. Signs admin session JWTs (Auth.js, Credentials provider). Generate with `openssl rand -base64 32`.
+- `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` — the one V1 admin account. Only read by `npm run db:seed` (not by the running app) — re-run the seed any time after changing `ADMIN_PASSWORD` to reset it.
 
 ## Development Rules
 

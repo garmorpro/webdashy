@@ -40,7 +40,12 @@ cp .env.example .env
 nano .env   # or your editor of choice
 ```
 
-At minimum, set a strong `POSTGRES_PASSWORD` and update `DATABASE_URL` to match. Never commit `.env` — it's gitignored.
+At minimum, set:
+- A strong `POSTGRES_PASSWORD`, updated to match inside `DATABASE_URL` too
+- `AUTH_SECRET` — generate with `openssl rand -base64 32`
+- `ADMIN_EMAIL` / `ADMIN_PASSWORD` (and optionally `ADMIN_NAME`) — your login for the admin app
+
+Never commit `.env` — it's gitignored.
 
 ## Part D — Run the stack
 
@@ -54,15 +59,16 @@ This brings up:
 - `app` — the WebDashy Next.js app (built from the repo's `Dockerfile`)
 - `nginx` — reverse proxy on port 80, forwarding to `app:3000`
 
-Visit `http://<vm-ip>/` — you should see the WebDashy dashboard (currently backed by mock data, not the database). That confirms the VM, Docker, Postgres, app, and Nginx are all working end-to-end.
-
-A Prisma schema already exists ([prisma/schema.prisma](./prisma/schema.prisma)), but no migrations have been generated yet — that's Phase 2 (Template Library) work, since generating the initial migration requires a live Postgres connection to diff against. Once Phase 2 lands with real migrations committed to the repo, first boot on a new environment will need:
+Then apply migrations and seed reference data + your admin account:
 
 ```bash
 docker compose exec app npx prisma migrate deploy
+docker compose exec app npm run db:seed
 ```
 
-Until then this command is a no-op (nothing to deploy).
+Visit `http://<vm-ip>/` — you should land on the login page. Sign in with `ADMIN_EMAIL` / `ADMIN_PASSWORD` from your `.env`. That confirms the VM, Docker, Postgres, app, Nginx, and admin auth are all working end-to-end.
+
+To reset your admin password later: change `ADMIN_PASSWORD` in `.env` and re-run `docker compose exec app npm run db:seed` — it upserts by email, so this safely updates the existing account rather than creating a duplicate.
 
 ## Ongoing deploys
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Menu } from "lucide-react";
+import { Menu, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -13,11 +13,33 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { NavLinks } from "@/components/admin/nav-links";
 import { navItems, systemNavItems } from "@/lib/nav-items";
+import { logoutAction } from "@/lib/actions/auth";
 
-export function Topbar() {
+function initialsFor(name?: string | null, email?: string | null): string {
+  const source = name?.trim() || email?.trim() || "";
+  if (!source) return "?";
+  const parts = source.split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return source.slice(0, 2).toUpperCase();
+}
+
+export function Topbar({
+  user,
+}: {
+  user?: { name?: string | null; email?: string | null } | null;
+}) {
   const [open, setOpen] = useState(false);
+  const [, startTransition] = useTransition();
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-8">
@@ -60,11 +82,36 @@ export function Topbar() {
       <div className="hidden md:block" />
 
       <div className="flex items-center gap-3">
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-accent text-accent-foreground text-xs font-medium">
-            GM
-          </AvatarFallback>
-        </Avatar>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button type="button" aria-label="Account menu" className="rounded-full">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-accent text-accent-foreground text-xs font-medium">
+                    {initialsFor(user?.name, user?.email)}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+            }
+          />
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel className="max-w-[220px] truncate font-normal text-muted-foreground">
+              {user?.name || user?.email || "Signed in"}
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              variant="destructive"
+              onClick={() => {
+                startTransition(() => {
+                  logoutAction();
+                });
+              }}
+            >
+              <LogOut className="h-4 w-4" />
+              Sign Out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

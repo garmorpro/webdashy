@@ -124,4 +124,4 @@ _Update this section as phases complete._
 
 **Also done, outside the phase list**: real brand colors/logo throughout (admin + public portal), row actions (Start Portal wizard, Edit, Archive, Delete) on Clients, row actions (Copy Link, Open, Edit Templates, Disable, Reset Selection) on Portals.
 
-**Biggest open gap**: admin authentication (§25) — the app is currently reachable by anyone with the URL, no login at all. Has been deferred every time it's come up in favor of feature work; worth revisiting soon given how much real functionality now sits behind that missing door.
+**Admin authentication (§25) is now live** — Auth.js Credentials provider, single admin account, JWT sessions. See ARCHITECTURE.md §6.
