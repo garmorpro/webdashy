@@ -89,45 +89,35 @@ docker compose exec app npx prisma migrate deploy   # if there are new migration
 | Port | Purpose | Exposed |
 |---|---|---|
 | 22 | SSH | Yes (ufw: OpenSSH) |
-| 80 | HTTP (Nginx) | Yes |
-| 443 | HTTPS (Nginx, Cloudflare Origin Certificate) | Yes |
+| 80 | HTTP (Nginx) | Yes, from the local network — there's no public IP, so this isn't internet-reachable directly. The only path in from the internet is Cloudflare Tunnel, which makes an outbound connection out and needs no inbound port opened at all. |
 | 5432 | Postgres | No — bound to `127.0.0.1` only inside the VM, not reachable from outside |
+
+No port 443 — TLS is terminated entirely at Cloudflare's edge (see "Domain + TLS via Cloudflare Tunnel" below), so nginx never needs to speak HTTPS itself.
 
 ---
 
-## Domain + TLS via Cloudflare
+## Domain + TLS via Cloudflare Tunnel
 
-`webdashy.com` is proxied through Cloudflare with a Cloudflare Origin Certificate on nginx — not Let's Encrypt/Certbot. This is the simpler option specifically because Cloudflare sits in front: Cloudflare trusts its own Origin CA directly, so there's no HTTP-01 challenge, no renewal cron job, and the cert is valid for 15 years.
+**This VM has no public IP.** It's reached from the internet exclusively through **Cloudflare Tunnel** (`cloudflared`, running as a service on the VM itself), not direct DNS-to-IP + port forwarding. This means there's no Origin Certificate, no port 443 to open, and no Let's Encrypt/Certbot anywhere in the picture — Cloudflare terminates TLS entirely at their own edge, and the tunnel carries plain HTTP from Cloudflare to nginx on port 80.
 
-**In the Cloudflare dashboard:**
+(An earlier version of this doc described setting up a Cloudflare Origin Certificate on nginx instead — that was written assuming a directly-public-IP VM, which turned out to be wrong for this deployment. Left this note so future-us doesn't wonder why that approach isn't here.)
 
-1. **DNS** → add an `A` record: `webdashy.com` → the VM's public IP. Proxy status: **Proxied** (orange cloud) — this hides the VM's real IP from visitors and gives some DDoS protection for free. Repeat for `www` if you want that to work too.
-2. **SSL/TLS → Overview** → encryption mode: **Full (strict)**.
-3. **SSL/TLS → Edge Certificates** → turn on **Always Use HTTPS**.
-4. **SSL/TLS → Origin Server** → **Create Certificate**. Defaults are fine (RSA, covers `webdashy.com` + `*.webdashy.com`, 15 years). This gives you two blocks of text — an **Origin Certificate** and a **Private Key**.
+**Cloudflare Zero Trust dashboard** (Access / Tunnels, not the regular DNS tab):
 
-**On the VM** (repo already has the nginx config + compose wiring for this — `git pull` first if you haven't):
+- **Tunnels** → the tunnel running on this VM should show as **Connected**.
+- That tunnel's **Published application routes** maps `webdashy.com` → `http://<vm-private-ip>` (port 80, matching nginx). DNS for `webdashy.com` is managed automatically by this route (a `CNAME` to `<tunnel-id>.cfargotunnel.com`) — no manual `A` record needed, unlike a normal Cloudflare setup.
 
-```bash
-mkdir -p nginx/certs
-nano nginx/certs/cert.pem   # paste the Origin Certificate block, save
-nano nginx/certs/key.pem    # paste the Private Key block, save
-docker compose up -d --build
-```
+**On the VM**: nothing extra to configure for this beyond the repo's existing `nginx/webdashy.conf`, which already handles it — it's a single plain-HTTP-on-port-80 listener, which is exactly what the tunnel expects. `docker-compose.yml` doesn't publish 443 at all (there's no public IP for anything to reach it on anyway).
 
-These two files live only on the VM — `nginx/certs/` is gitignored (a private key should never be committed, even to a private repo).
+One correctness detail worth knowing: `cloudflared` sets `X-Forwarded-Proto: https` on requests it forwards (since it knows the original visitor connection was HTTPS), and nginx is configured to preserve that header rather than overwrite it with its own `$scheme` (which would incorrectly say `http` for every tunneled request). This matters because `getAbsoluteUrl()` (portal links, the notification email's admin link) and Auth.js's secure-cookie behavior both read that header — get it wrong and portal links would show `http://` instead of `https://`.
 
-**Verify:**
+**Verify**:
 
 ```bash
 curl -I https://webdashy.com
 ```
 
-Should return `200` with no certificate warnings. `http://webdashy.com` should 301-redirect to the `https://` version. Direct IP access (`http://<vm-ip>/`) keeps working over plain HTTP as a fallback — a Cloudflare Origin Certificate only covers the domain, not the raw IP, so that path intentionally isn't HTTPS.
-
-No app config changes needed for this — `getAbsoluteUrl()` (used for portal links and the notification email's admin link) already builds URLs from the request's actual `Host`/`X-Forwarded-Proto` headers, so it automatically produces `https://webdashy.com/...` links once traffic arrives through Cloudflare, no hardcoded URL anywhere to update. Same for Auth.js (`trustHost: true`), which needs no `AUTH_URL` override.
-
-**If you ever rotate the Origin Certificate**: replace both files and `docker compose up -d --force-recreate nginx` (see the nginx-config-doesn't-hot-reload gotcha below).
+Should return `200`. Direct IP access from your local network (`http://<vm-ip>/`) keeps working too — that's the LAN-only fallback, not a public path (there's no public IP for the outside world to reach it on).
 
 ## Maintenance Notes
 

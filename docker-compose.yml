@@ -44,12 +44,10 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
-      - "443:443"
+      # No 443 — TLS is terminated at Cloudflare's edge (this VM is reached
+      # via Cloudflare Tunnel, not a public IP; see DEPLOYMENT.md).
     volumes:
       - ./nginx/webdashy.conf:/etc/nginx/conf.d/default.conf:ro
-      # Cloudflare Origin Certificate — see DEPLOYMENT.md. This directory
-      # lives only on the VM, never in git (nginx/certs/ is gitignored).
-      - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - app
 

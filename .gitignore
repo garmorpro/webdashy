@@ -31,8 +31,3 @@ Thumbs.db
 # Misc
 .turbo/
 coverage/
-
-# TLS — Cloudflare Origin Certificate, VM-local only, never committed
-nginx/certs/*
-!nginx/certs/.gitkeep
-!nginx/certs/README.md
