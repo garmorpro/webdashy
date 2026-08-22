@@ -10,6 +10,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
+  callbacks: {
+    // Expose the DB user id on the token/session — needed so pages can
+    // look up fresh profile data (name/email may have changed since
+    // login; JWT sessions don't auto-refresh) rather than trusting
+    // whatever was true at sign-in time.
+    jwt({ token, user }) {
+      if (user) token.id = user.id;
+      return token;
+    },
+    session({ session, token }) {
+      if (session.user && typeof token.id === "string") {
+        session.user.id = token.id;
+      }
+      return session;
+    },
+  },
   providers: [
     Credentials({
       credentials: {
