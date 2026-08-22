@@ -99,6 +99,7 @@ model Client {
   contactName     String
   email           String
   phone           String?
+  website         String?
   industry        String?
   status          ClientStatus @default(LEAD)
   leadSource      String?
