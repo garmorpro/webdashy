@@ -9,7 +9,7 @@
 
 ARG NODE_VERSION=22-slim
 
-# --- deps: install all node_modules ---
+# --- deps: full install (incl. devDependencies), used to build the app ---
 FROM node:${NODE_VERSION} AS deps
 WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends openssl \
@@ -20,6 +20,21 @@ COPY package.json package-lock.json ./
 # in the builder stage, to keep this layer cache-friendly on source edits).
 COPY prisma ./prisma
 RUN npm ci
+
+# --- prod-deps: production-only install, for the runner's node_modules ---
+# A clean `npm ci --omit=dev` (rather than cherry-picking files out of the
+# `deps` install) so npm's own symlinks — e.g. node_modules/.bin/prisma,
+# which points into node_modules/prisma/build/ where its .wasm files live —
+# stay intact. Docker COPY of an individual symlinked file dereferences it
+# into a flat file in the wrong directory, breaking Prisma's relative
+# lookup of its bundled schema-engine .wasm at runtime.
+FROM node:${NODE_VERSION} AS prod-deps
+WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json ./
+COPY prisma ./prisma
+RUN npm ci --omit=dev
 
 # --- builder: generate Prisma client + build Next.js ---
 FROM node:${NODE_VERSION} AS builder
@@ -54,14 +69,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Prisma schema + CLI so `docker compose exec app npx prisma migrate deploy`
-# works from the running container (the standalone build only traces
-# @prisma/client, not the `prisma` CLI itself, since app code never imports
-# it directly).
+# Full production node_modules (see prod-deps stage comment above) — layered
+# on top of standalone's traced subset so `docker compose exec app npx
+# prisma migrate deploy` / `npm run db:seed` work from the running
+# container, not just the app itself.
+COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/.bin/prisma ./node_modules/.bin/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/package.json ./package.json
 
 USER nextjs
