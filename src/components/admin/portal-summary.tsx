@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Copy, Eye, Ban, CheckCircle2 } from "lucide-react";
+import { Copy, ExternalLink, Eye, Ban, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -71,6 +71,15 @@ export function PortalSummary({
         <Button variant="outline" size="sm" onClick={copyLink}>
           <Copy className="h-3.5 w-3.5" />
           Copy Portal Link
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          nativeButton={false}
+          render={<a href={portalUrl} target="_blank" rel="noopener noreferrer" />}
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          Open Portal
         </Button>
       </div>
 
