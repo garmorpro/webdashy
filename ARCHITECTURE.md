@@ -168,3 +168,4 @@ Track architecture decisions still pending here as they come up, e.g.:
 - Exact admin auth provider (Auth.js vs Clerk vs Supabase Auth).
 - Image storage/hosting strategy for template screenshots (local vs S3-compatible/object storage vs CDN).
 - Whether route handlers or server actions are used for mutations.
+- Selection-notification email currently sends via Gmail SMTP as the real Gmail address (displayed as "WebDashy"). Sending as `garrett@webdashy.com` needs DNS access to that domain first (not currently available — see DEPLOYMENT.md), then one of: (a) Cloudflare Email Routing forwarding that address to Gmail so it can be verified as a Gmail "Send mail as" alias, or (b) switching to a transactional provider (Resend/SendGrid) with the domain verified via SPF/DKIM — the more standard approach, and probably the better long-term choice regardless of the domain-sender question.
