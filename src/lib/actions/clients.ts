@@ -3,10 +3,21 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { normalizeUrl } from "@/lib/utils";
 import { ClientStatus } from "@prisma/client";
 
 export type ClientActionState = { error?: string };
+
+// Server Actions dispatch by action ID, not by the request's page pathname
+// — proxy.ts's matcher (which deliberately excludes /p/[token] so the
+// public portal stays unauthenticated) does NOT stop an unauthenticated
+// caller from invoking one of these admin actions directly. Every action
+// below must check the session itself.
+async function requireAdmin(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.id ? null : "You must be signed in.";
+}
 
 function readClientFields(formData: FormData) {
   const get = (key: string) => String(formData.get(key) ?? "").trim();
@@ -41,6 +52,9 @@ export async function createClient(
   _prevState: ClientActionState,
   formData: FormData
 ): Promise<ClientActionState> {
+  const authError = await requireAdmin();
+  if (authError) return { error: authError };
+
   const fields = readClientFields(formData);
 
   if (!fields.businessName) return { error: "Business name is required." };
@@ -82,6 +96,9 @@ export async function updateClient(
   _prevState: ClientActionState,
   formData: FormData
 ): Promise<ClientActionState> {
+  const authError = await requireAdmin();
+  if (authError) return { error: authError };
+
   const fields = readClientFields(formData);
 
   if (!fields.businessName) return { error: "Business name is required." };
@@ -120,12 +137,18 @@ export async function updateClient(
 }
 
 export async function archiveClient(clientId: string) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   await db.client.update({ where: { id: clientId }, data: { status: "LOST" } });
   revalidatePath("/clients");
   revalidatePath(`/clients/${clientId}`);
 }
 
 export async function deleteClient(clientId: string) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   try {
     // Client -> Portal is onDelete: Cascade, so this also removes any
     // portals (and their events/selections) for this client.

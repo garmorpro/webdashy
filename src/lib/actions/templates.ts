@@ -3,10 +3,18 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { slugify } from "@/lib/utils";
 import { TemplateStatus } from "@prisma/client";
 
 export type TemplateActionState = { error?: string };
+
+// See clients.ts for why this check has to live in the action itself —
+// proxy.ts's route-based matcher doesn't cover Server Action dispatch.
+async function requireAdmin(): Promise<string | null> {
+  const session = await auth();
+  return session?.user?.id ? null : "You must be signed in.";
+}
 
 function parseTags(raw: string): string[] {
   return Array.from(
@@ -55,6 +63,9 @@ export async function createTemplate(
   _prevState: TemplateActionState,
   formData: FormData
 ): Promise<TemplateActionState> {
+  const authError = await requireAdmin();
+  if (authError) return { error: authError };
+
   const fields = readTemplateFields(formData);
 
   if (!fields.name) return { error: "Template name is required." };
@@ -99,6 +110,9 @@ export async function updateTemplate(
   _prevState: TemplateActionState,
   formData: FormData
 ): Promise<TemplateActionState> {
+  const authError = await requireAdmin();
+  if (authError) return { error: authError };
+
   const fields = readTemplateFields(formData);
 
   if (!fields.name) return { error: "Template name is required." };
@@ -140,17 +154,26 @@ export async function updateTemplate(
 }
 
 export async function setTemplateStatus(templateId: string, status: TemplateStatus) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   await db.template.update({ where: { id: templateId }, data: { status } });
   revalidatePath("/templates");
   revalidatePath(`/templates/${templateId}`);
 }
 
 export async function toggleTemplateFavorite(templateId: string, isFavorite: boolean) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   await db.template.update({ where: { id: templateId }, data: { isFavorite } });
   revalidatePath("/templates");
 }
 
 export async function deleteTemplate(templateId: string) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
   try {
     await db.template.delete({ where: { id: templateId } });
   } catch (err) {
