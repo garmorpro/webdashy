@@ -54,9 +54,16 @@ export async function sendSelectionNotification({
   const html = renderSelectionEmail({ clientName, templateName, dateStr, clientAdminUrl });
   const text = `${clientName} just selected "${templateName}" for their website.\n${dateStr}\n\nView their record: ${clientAdminUrl}`;
 
+  // GMAIL_USER is the authenticated Gmail account (SMTP login) — MAIL_FROM
+  // is a separate, optional override for the visible "From" address, used
+  // once that address is verified as a Gmail "Send mail as" alias (Gmail
+  // rejects/rewrites an unverified From regardless of what's set here).
+  // Falls back to the Gmail address itself if no alias is configured.
+  const fromAddress = process.env.MAIL_FROM || process.env.GMAIL_USER;
+
   try {
     await t.sendMail({
-      from: `WebDashy <${process.env.GMAIL_USER}>`,
+      from: `WebDashy <${fromAddress}>`,
       to,
       subject: `${clientName} selected a template — ${templateName}`,
       text,

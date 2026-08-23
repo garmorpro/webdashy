@@ -69,6 +69,7 @@ Never commit real values — use [.env.example](./.env.example) as the template 
 - `DATABASE_URL` — PostgreSQL connection string (required)
 - `POSTGRES_USER` / `POSTGRES_PASSWORD` / `POSTGRES_DB` — used by the `db` service in [docker-compose.yml](./docker-compose.yml)
 - `GMAIL_USER` / `GMAIL_APP_PASSWORD` / `NOTIFY_EMAIL_TO` — email notification when a client selects a template. Optional — if unset, notifications are silently skipped (the selection itself still works). `GMAIL_APP_PASSWORD` must be a Google [App Password](https://myaccount.google.com/apppasswords), not the account's regular password.
+- `MAIL_FROM` — optional, defaults to `GMAIL_USER`. Overrides the visible "From" address on the notification email (e.g. `garrett@webdashy.com`) while `GMAIL_USER` stays the actual SMTP login — only takes effect once that address is verified as a Gmail "Send mail as" alias.
 - `AUTH_SECRET` — required. Signs admin session JWTs (Auth.js, Credentials provider). Generate with `openssl rand -base64 32`.
 - `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` — optional, emergency-recovery only. Your actual admin account is created through `/setup` in the browser (a one-time page, only reachable while the database has no users) — these vars exist purely so `npm run db:seed` can create-or-reset that account by email if you're ever locked out.
 
