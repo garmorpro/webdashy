@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, LayoutTemplate } from "lucide-react";
+import { Eye, LayoutTemplate, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Category, Template } from "@prisma/client";
@@ -27,15 +27,22 @@ function gradientFor(id: string) {
 
 export function PortalTemplateCard({
   template,
-  onChoose,
+  selected,
+  onSelect,
 }: {
   template: Template & { category: Category | null };
-  onChoose: () => void;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const screenshot = template.desktopScreenshotUrl || template.thumbnailUrl;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-lg">
+    <div
+      className={cn(
+        "overflow-hidden rounded-2xl border-2 bg-white shadow-sm transition-shadow hover:shadow-lg",
+        selected ? "border-lime-400 ring-4 ring-lime-400/30" : "border-slate-200"
+      )}
+    >
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
         {screenshot ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -57,6 +64,12 @@ export function PortalTemplateCard({
         <p className="mt-0.5 text-sm text-slate-500">
           {template.category?.name ?? "Website Template"}
         </p>
+        {selected ? (
+          <p className="mt-2 flex items-center gap-1 text-xs font-semibold text-emerald-700">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Selected
+          </p>
+        ) : null}
 
         <div className="mt-4 grid grid-cols-2 gap-2">
           {template.previewUrl ? (
@@ -81,10 +94,11 @@ export function PortalTemplateCard({
           )}
 
           <Button
-            onClick={onChoose}
+            variant={selected ? "outline" : "default"}
+            onClick={onSelect}
             className="h-auto min-h-9 whitespace-normal px-2 py-2 text-center text-xs leading-tight"
           >
-            Choose This Template
+            {selected ? "Selected" : "Choose This Template"}
           </Button>
         </div>
       </div>

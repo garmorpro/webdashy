@@ -13,3 +13,13 @@ export function generatePortalToken(businessName: string): string {
   const suffix = randomBytes(8).toString("hex"); // 16 hex chars, 64 bits of entropy
   return prefix ? `${prefix}-${suffix}` : suffix;
 }
+
+/**
+ * Same shape and security model as generatePortalToken (see above) — a
+ * separate named export purely so call sites read clearly (Delivery.reviewToken
+ * vs Portal.token are different resources, even though the generation logic
+ * is identical).
+ */
+export function generateReviewToken(businessName: string): string {
+  return generatePortalToken(businessName);
+}

@@ -19,7 +19,8 @@ export type ConfirmSelectionState = { error?: string };
  */
 export async function confirmPortalSelection(
   token: string,
-  templateId: string
+  templateId: string,
+  planId: string | null
 ): Promise<ConfirmSelectionState> {
   const portal = await db.portal.findUnique({
     where: { token },
@@ -48,11 +49,22 @@ export async function confirmPortalSelection(
     };
   }
 
+  // Re-validate the plan the same way — never trust a client-supplied id
+  // without confirming it's real and currently offered.
+  let validPlanId: string | null = null;
+  if (planId) {
+    const plan = await db.plan.findUnique({ where: { id: planId } });
+    if (!plan || !plan.isActive) {
+      return { error: "That plan isn't available. Please choose one of the options shown." };
+    }
+    validPlanId = plan.id;
+  }
+
   let selectedAt: Date;
   try {
     const [created] = await db.$transaction([
       db.templateSelection.create({
-        data: { portalId: portal.id, templateId },
+        data: { portalId: portal.id, templateId, planId: validPlanId },
       }),
       db.portal.update({
         where: { id: portal.id },

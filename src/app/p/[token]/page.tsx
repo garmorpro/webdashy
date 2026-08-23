@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
+import { getAppSettings } from "@/lib/settings";
 import { PortalShell } from "@/components/portal/portal-shell";
 import { PortalGrid } from "@/components/portal/portal-grid";
 import { PortalSuccess } from "@/components/portal/portal-success";
@@ -20,7 +21,7 @@ async function getPortal(token: string) {
         include: { template: { include: { category: true } } },
         orderBy: { displayOrder: "asc" },
       },
-      selection: { include: { template: true } },
+      selection: { include: { template: true, plan: true } },
     },
   });
 }
@@ -49,20 +50,30 @@ export default async function PublicPortalPage({
   params: Promise<{ token: string }>;
 }) {
   const { token } = await params;
-  const portal = await getPortal(token);
+  const [portal, settings] = await Promise.all([getPortal(token), getAppSettings()]);
 
   if (!portal) notFound();
   if (portal.status === "DISABLED") return <PortalUnavailable />;
+
+  const plans = portal.selection
+    ? []
+    : await db.plan.findMany({ where: { isActive: true }, orderBy: { displayOrder: "asc" } });
 
   return (
     <PortalShell clientName={portal.client.businessName} message={portal.message}>
       {portal.selection ? (
         <PortalSuccess
           templateName={portal.selection.template.name}
+          planName={portal.selection.plan?.name ?? null}
           selectedAt={portal.selection.selectedAt}
         />
       ) : (
-        <PortalGrid token={token} templates={portal.templates.map((t) => t.template)} />
+        <PortalGrid
+          token={token}
+          templates={portal.templates.map((t) => t.template)}
+          plans={plans}
+          showPricing={settings.showPricingInPortal}
+        />
       )}
     </PortalShell>
   );

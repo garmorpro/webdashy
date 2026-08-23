@@ -15,13 +15,16 @@ Server setup & deploys: [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ## How it works
 
-1. Add website templates to the library (screenshots + live demo URLs).
-2. Add a prospective client.
-3. Pick a curated set of templates (2–8) for that client.
-4. WebDashy generates a unique, unguessable portal link, e.g. `webdashy.com/p/acme-construction-x7f92`.
-5. Send the link to the client — no account needed on their end.
-6. The client previews each template live, then confirms their favorite.
-7. WebDashy records the selection and notifies you.
+WebDashy follows one client through an 8-step pipeline, shown as a stepper at the top of every client's page:
+
+1. **Add Lead** — add a prospective client to the CRM.
+2. **Contact** — reach out; mark them Contacted/Interested, or Lost.
+3. **Portal Sent** — pick a curated set of templates (2–8) and generate a unique, unguessable portal link, e.g. `webdashy.com/p/acme-construction-x7f92`. No account needed on the client's end.
+4. **Template & Plan** — the client previews each template live and picks one, alongside a pricing plan (managed once under Settings, reused across every client).
+5. **Invoice** — fill in project requirements, then generate and email an invoice (PDF attached).
+6. **Building** — mark the project in progress once the invoice is paid.
+7. **Delivered** — enter the live URL; WebDashy emails the client a review link where they approve or request changes.
+8. **Complete** — once the client approves and the invoice is paid, the project is marked Won.
 
 Target: from "add a client" to "send a portal link" in under two minutes.
 

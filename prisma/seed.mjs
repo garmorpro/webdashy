@@ -64,9 +64,22 @@ async function seedAdminUser() {
   console.log(`Seeded admin user (${email}).`);
 }
 
+async function seedAppSettings() {
+  // Ensures the singleton row exists — getAppSettings() also
+  // upserts defensively, but seeding it here keeps a fresh deploy from
+  // ever touching a database with zero rows in this table.
+  await db.appSettings.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: { id: "singleton" },
+  });
+  console.log("Seeded app settings.");
+}
+
 async function main() {
   await seedCategories();
   await seedAdminUser();
+  await seedAppSettings();
 }
 
 main()

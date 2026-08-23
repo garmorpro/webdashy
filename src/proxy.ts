@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-// Protects every admin route. The public portal (/p/[token]) and the auth
-// routes themselves are explicitly excluded — see ARCHITECTURE.md §6: the
-// public portal must never require login, security there comes entirely
-// from the unguessable token.
+// Protects every admin route. The public portal (/p/[token]), the delivery
+// review page (/r/[token]), and the auth routes themselves are explicitly
+// excluded — see ARCHITECTURE.md §6: both public pages must never require
+// login, security there comes entirely from their own unguessable token.
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
@@ -26,7 +26,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Everything except: the public portal, static assets, brand images, the
-  // favicon, and Next's own internals.
-  matcher: ["/((?!p/|_next/static|_next/image|brand/|favicon.ico).*)"],
+  // Everything except: the public portal, the delivery review page, static
+  // assets, brand images, the favicon, and Next's own internals.
+  matcher: ["/((?!p/|r/|_next/static|_next/image|brand/|favicon.ico).*)"],
 };

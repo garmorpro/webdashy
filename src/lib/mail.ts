@@ -1,6 +1,11 @@
 import path from "path";
 import nodemailer from "nodemailer";
-import { renderSelectionEmail } from "@/lib/email-templates";
+import {
+  renderSelectionEmail,
+  renderInvoiceEmail,
+  renderDeliveryReviewEmail,
+  renderReviewOutcomeEmail,
+} from "@/lib/email-templates";
 
 let transporter: nodemailer.Transporter | null | undefined;
 
@@ -83,5 +88,139 @@ export async function sendSelectionNotification({
     // client confirming their selection. The selection itself is already
     // committed to the database by the time this runs.
     console.error("Failed to send selection notification email:", err);
+  }
+}
+
+function getFromAddress(): string | undefined {
+  return process.env.MAIL_FROM || process.env.GMAIL_USER;
+}
+
+const WORDMARK_ATTACHMENT = {
+  filename: "wordmark.png",
+  path: path.join(process.cwd(), "public/brand/wordmark-dark.png"),
+  cid: "wordmark",
+};
+
+/**
+ * Emails the client their invoice with the PDF attached. Unlike
+ * sendSelectionNotification (best-effort, notifies the admin), a failed
+ * send here is surfaced to the caller — the admin action that calls this
+ * needs to know whether the client actually received it, since there's no
+ * other confirmation path yet.
+ */
+export async function sendInvoiceEmail({
+  to,
+  contactName,
+  businessName,
+  invoiceNumber,
+  totalDue,
+  dueDateStr,
+  terms,
+  paymentInstructions,
+  pdfBuffer,
+}: {
+  to: string;
+  contactName: string;
+  businessName: string;
+  invoiceNumber: string;
+  totalDue: string;
+  dueDateStr: string;
+  terms: string;
+  paymentInstructions: string | null;
+  pdfBuffer: Buffer;
+}): Promise<void> {
+  const t = getTransporter();
+  if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
+
+  const html = renderInvoiceEmail({
+    contactName,
+    businessName,
+    invoiceNumber,
+    totalDue,
+    dueDateStr,
+    terms,
+    paymentInstructions,
+  });
+  const text = `Hi ${contactName}, your invoice ${invoiceNumber} (${totalDue}, due ${dueDateStr}) is attached.`;
+
+  await t.sendMail({
+    from: `WebDashy <${getFromAddress()}>`,
+    to,
+    subject: `Your invoice from WebDashy — ${invoiceNumber}`,
+    text,
+    html,
+    attachments: [
+      WORDMARK_ATTACHMENT,
+      { filename: `invoice-${invoiceNumber}.pdf`, content: pdfBuffer, contentType: "application/pdf" },
+    ],
+  });
+}
+
+/** Emails the client their review link once the admin marks a site Delivered. Same not-best-effort reasoning as sendInvoiceEmail. */
+export async function sendDeliveryReviewEmail({
+  to,
+  contactName,
+  businessName,
+  liveUrl,
+  reviewUrl,
+}: {
+  to: string;
+  contactName: string;
+  businessName: string;
+  liveUrl: string;
+  reviewUrl: string;
+}): Promise<void> {
+  const t = getTransporter();
+  if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
+
+  const html = renderDeliveryReviewEmail({ contactName, businessName, liveUrl, reviewUrl });
+  const text = `Hi ${contactName}, ${businessName}'s new site is ready: ${liveUrl}\nReview it here: ${reviewUrl}`;
+
+  await t.sendMail({
+    from: `WebDashy <${getFromAddress()}>`,
+    to,
+    subject: `Your website is ready for review!`,
+    text,
+    html,
+    attachments: [WORDMARK_ATTACHMENT],
+  });
+}
+
+/**
+ * Notifies the admin when a client approves or requests changes on a
+ * delivery review — best-effort, mirrors sendSelectionNotification: never
+ * let a failed send here affect the client-facing response.
+ */
+export async function sendReviewOutcomeNotification({
+  clientName,
+  approved,
+  feedback,
+  clientAdminUrl,
+}: {
+  clientName: string;
+  approved: boolean;
+  feedback: string | null;
+  clientAdminUrl: string;
+}): Promise<void> {
+  const t = getTransporter();
+  if (!t) return;
+
+  const to = process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER;
+  const html = renderReviewOutcomeEmail({ clientName, approved, feedback, clientAdminUrl });
+  const text = approved
+    ? `${clientName} approved their delivered site.\nView their record: ${clientAdminUrl}`
+    : `${clientName} requested changes: ${feedback ?? "(no comment)"}\nView their record: ${clientAdminUrl}`;
+
+  try {
+    await t.sendMail({
+      from: `WebDashy <${getFromAddress()}>`,
+      to,
+      subject: approved ? `${clientName} approved their site` : `${clientName} requested changes`,
+      text,
+      html,
+      attachments: [WORDMARK_ATTACHMENT],
+    });
+  } catch (err) {
+    console.error("Failed to send review outcome notification email:", err);
   }
 }

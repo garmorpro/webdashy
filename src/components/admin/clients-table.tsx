@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Link2, MoreVertical, Pencil, Archive, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ export function ClientsTable({
   clients: Client[];
   templates: (Template & { category: Category | null })[];
 }) {
+  const router = useRouter();
   const [portalTarget, setPortalTarget] = useState<Client | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Client | null>(null);
   const [, startTransition] = useTransition();
@@ -68,14 +70,16 @@ export function ClientsTable({
           </TableHeader>
           <TableBody>
             {clients.map((client) => (
-              <TableRow key={client.id}>
+              <TableRow
+                key={client.id}
+                className="cursor-pointer"
+                onClick={() => router.push(`/clients/${client.id}`)}
+              >
                 <TableCell>
-                  <Link href={`/clients/${client.id}`} className="block">
-                    <span className="font-medium text-foreground">{client.businessName}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {client.contactName}
-                    </span>
-                  </Link>
+                  <span className="font-medium text-foreground">{client.businessName}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    {client.contactName}
+                  </span>
                 </TableCell>
                 <TableCell>
                   <Badge
@@ -94,7 +98,7 @@ export function ClientsTable({
                 <TableCell className="text-muted-foreground">
                   {dateFormatter.format(client.createdAt)}
                 </TableCell>
-                <TableCell className="text-right">
+                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       render={

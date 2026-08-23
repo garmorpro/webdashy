@@ -99,15 +99,32 @@ Modeled with Prisma. See `prisma/schema.prisma` once created; conceptual model b
 
 **PortalEvent** — lightweight analytics log. `id, portalId, templateId?, eventType (PORTAL_VIEWED / TEMPLATE_PREVIEWED / TEMPLATE_SELECTED), createdAt`
 
-**TemplateSelection** — the confirmed choice for a portal. `id, portalId, templateId, selectedAt`
+**TemplateSelection** — the confirmed choice for a portal. `id, portalId, templateId, planId?, selectedAt`
+
+### Client pipeline (added after V1)
+
+An 8-step pipeline layered on top of the original selection flow: **Add Lead → Contact → Portal Sent → Template & Plan → Invoice → Building → Delivered → Complete**. `ClientStatus` gained `INVOICE_SENT` and `DELIVERED` to track it (`BUILDING`/`WON` already existed); `src/lib/client-status.ts`'s `pipelineStepIndex()` maps a status to a stepper position, shown at the top of every client detail page (`ClientStepper`). Each pipeline stage after template+plan selection is its own model, all keyed 1:1 off `Portal` (not `Client`) since they describe one specific project:
+
+**Plan** — a reusable pricing tier, managed in Settings and offered on every portal (unlike `Template`, plans aren't curated per-portal — see product-build.md's original template-curation design vs. this simpler global-catalog approach for plans). `id, name, price, tagline, features (string[]), isActive, displayOrder, createdAt, updatedAt`
+
+**AppSettings** — single-row app config (`id` is always the literal `"singleton"`). `showPricingInPortal` (toggles whether `Plan.price` is shown to clients — off shows "Custom quote after selection" instead), `invoiceFromName/Address/PaymentInstructions/Terms` (used on every invoice PDF/email).
+
+**ProjectRequirements** — admin-filled project scope, one per portal, unlocked once a template+plan is selected. `id, portalId (unique), pages (string[]), features (string[]), contentStatus (enum), targetLaunchDate?, notes?`
+
+**Invoice** / **InvoiceLineItem** — track-only invoicing (no live payment processor yet — see §9). `Invoice: id, invoiceNumber (e.g. INV-2026-0001, unique), clientId, portalId?, status (Draft/Sent/Paid), issueDate, dueDate?, taxAmount, sentAt?, paidAt?, stripeInvoiceId?/stripePaymentUrl?` (reserved, unused columns for a future real Stripe swap-in). `InvoiceLineItem: id, invoiceId, description, amount, displayOrder`. Rendered to PDF via `@react-pdf/renderer` (`src/lib/invoice-pdf.tsx`) — chosen over a headless-Chromium/Puppeteer screenshot approach specifically to avoid another fragile native-binary Docker dependency (see the Prisma CLI symlink incident in deployment history).
+
+**Delivery** — build status + the client-review loop, one per portal. `id, portalId (unique), status (Building/Delivered), stagingUrl?, liveUrl?, reviewToken? (unique, same unguessable-token security model as Portal.token), reviewStatus (Awaiting/Approved/ChangesRequested), reviewFeedback?, deliveredAt?, reviewedAt?`
+
+A client's `status` reaches `WON` once **both** halves of step 8 are true — the client approved the delivery AND every invoice tied to that portal is paid — via `maybeCompleteProject()` (`src/lib/project-completion.ts`), called from both the admin's "Mark as Paid" action and the client's "Approve" action, since either can happen first.
 
 ### Relationships
 
-- One `Client` → many `Portal`s.
+- One `Client` → many `Portal`s (in practice capped at one active portal per client by `createPortal`'s own guard — a second portal is only reachable via a stale link, and redirects rather than creating a duplicate).
 - One `Portal` → one `Client`.
 - One `Portal` → many `Template`s (via `PortalTemplate`).
 - One `Template` → many `Portal`s.
-- One `Portal` → at most one confirmed `TemplateSelection`.
+- One `Portal` → at most one confirmed `TemplateSelection`, which references at most one `Plan`.
+- One `Portal` → at most one `ProjectRequirements`, one `Delivery`, and many `Invoice`s (a client could be invoiced more than once for follow-on work).
 
 ---
 
@@ -130,10 +147,12 @@ Modeled with Prisma. See `prisma/schema.prisma` once created; conceptual model b
 **Public (unauthenticated):**
 
 ```
-/p/[token]           Client template selection portal
+/p/[token]                    Client template + plan selection portal
+/r/[token]                    Client delivery review (approve / request changes)
+/api/invoices/[id]/pdf        Admin-only invoice PDF view/download (a real route, not a Server Action — see §6)
 ```
 
-All `/p/[token]` routes must render `noindex` metadata and must resolve data strictly by the opaque `token` — never by internal numeric/sequential IDs.
+Both `/p/[token]` and `/r/[token]` must render `noindex` metadata and must resolve data strictly by their own opaque token — never by internal numeric/sequential IDs.
 
 ---
 
@@ -141,8 +160,8 @@ All `/p/[token]` routes must render `noindex` metadata and must resolve data str
 
 - **Admin routes** are protected by `src/proxy.ts` (Next.js's proxy/middleware, checked on every request before it reaches a page) using [Auth.js](https://authjs.dev) v5 with the Credentials provider — email + password checked against `User.passwordHash` (bcrypt) in Postgres, JWT session strategy (no separate session table). No admin route is reachable without a valid session; unauthenticated requests redirect to `/login` with the original path preserved as `callbackUrl`.
   - V1 supports exactly one administrator, created through `/setup` — a page reachable only while `User` has zero rows, that creates the account via a real form and then permanently redirects to `/login` once it exists. This avoids a plaintext password ever needing to sit in `.env`. `ADMIN_NAME`/`ADMIN_EMAIL`/`ADMIN_PASSWORD` env vars still exist as a `npm run db:seed`-driven emergency recovery path (upserts by email) for if you're ever locked out. Once signed in, the Settings page (`updateProfile`/`changePassword` in `src/lib/actions/account.ts`) is the normal way to manage the account — the schema (a real `User` table, not a hardcoded credential) allows adding real multi-user support later without a rework.
-  - Server actions themselves are *not* individually auth-checked — proxy-level protection of the pages that can reach them is the enforced boundary for V1. Revisit if multi-user support or a public write surface beyond the token-scoped portal actions is ever added.
-- **Public portal** has no login. Security is based entirely on the token being long, cryptographically random, and unguessable (e.g., generated with a CSPRNG, not a sequential ID or predictable slug+counter). `/p/[token]` and `/api/auth/*` are explicitly excluded from the proxy's auth check.
+  - Every admin-only Server Action (`src/lib/actions/{clients,portals,templates,plans,settings,requirements,invoices,delivery}.ts`) checks the session itself (`requireAdmin()`/`auth()` as the first line) rather than relying solely on proxy-level page protection. This matters because Next dispatches Server Actions by an internal action ID, not by the request's page pathname — so proxy.ts's exclusion of `/p/` and `/r/` (needed to keep the public portal and review page unauthenticated) doesn't actually stop a raw request to one of those excluded paths, carrying the right action ID, from invoking an admin action. `/api/invoices/[id]/pdf` is a real route (not a Server Action) so the pathname matcher does cover it, but it checks `auth()` too for the same defense-in-depth reason.
+- **Public portal and delivery review** have no login. Security is based entirely on their token being long, cryptographically random, and unguessable (e.g., generated with a CSPRNG, not a sequential ID or predictable slug+counter) — `generatePortalToken()`/`generateReviewToken()` in `src/lib/tokens.ts`. `/p/[token]`, `/r/[token]`, and `/api/auth/*` are explicitly excluded from the proxy's auth check. The Server Actions those pages call (`confirmPortalSelection`, `approveDelivery`, `requestChanges`) are intentionally public for the same reason, and re-validate every id they're passed (template, plan) against the token-resolved portal/delivery rather than trusting the client.
 - Public API/data access for a given token must only ever return data belonging to that portal's client — no cross-client leakage, even under enumeration attempts.
 - Public portal pages set `noindex` (and ideally `nofollow`) via metadata to keep them out of search engines.
 - Secrets and credentials are never committed; required environment variables are documented in `README.md`.
@@ -168,4 +187,5 @@ Tracking is intentionally lightweight (see spec §18). Each meaningful client-si
 Track architecture decisions still pending here as they come up, e.g.:
 
 - Image storage/hosting strategy for template screenshots (local vs S3-compatible/object storage vs CDN) — still open, screenshots are pasted URLs for now.
-- Selection-notification email still sends via Gmail SMTP (not a transactional provider like Resend/SendGrid with SPF/DKIM — that would be the more standard long-term choice, but Gmail SMTP is fine at this volume). The visible "From" address is now configurable via `MAIL_FROM` (see `.env.example`), separate from `GMAIL_USER` (the actual SMTP login) — set to `garrett@webdashy.com` once Cloudflare Email Routing (forwarding that address to Gmail) lets it be verified as a Gmail "Send mail as" alias in Gmail's own settings.
+- Selection-notification email still sends via Gmail SMTP (not a transactional provider like Resend/SendGrid with SPF/DKIM — that would be the more standard long-term choice, but Gmail SMTP is fine at this volume). The visible "From" address is now configurable via `MAIL_FROM` (see `.env.example`), separate from `GMAIL_USER` (the actual SMTP login) — set to `garrett@webdashy.com` once Cloudflare Email Routing (forwarding that address to Gmail) lets it be verified as a Gmail "Send mail as" alias in Gmail's own settings. The client-facing invoice and delivery-review emails added with the client pipeline reuse the same Gmail SMTP transport.
+- Invoicing is deliberately track-only for now — `Invoice.status` is set to `PAID` by the admin manually clicking "Mark as Paid," there's no real payment processor. `Invoice.stripeInvoiceId`/`stripePaymentUrl` are reserved, unused columns so a real Stripe integration can slot in later (a real "Pay Online" link/webhook replacing the manual mark-paid step) without another schema migration.

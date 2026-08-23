@@ -30,26 +30,26 @@ enum TemplateStatus {
 }
 
 model Template {
-  id                    String   @id @default(cuid())
-  name                  String
-  slug                  String   @unique
-  description           String?
-  categoryId            String?
-  category              Category? @relation(fields: [categoryId], references: [id])
-  thumbnailUrl          String?
-  desktopScreenshotUrl  String?
-  mobileScreenshotUrl   String?
-  previewUrl            String?
-  repositoryUrl         String?
-  isFavorite            Boolean  @default(false)
-  status                TemplateStatus @default(DRAFT)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String         @id @default(cuid())
+  name                 String
+  slug                 String         @unique
+  description          String?
+  categoryId           String?
+  category             Category?      @relation(fields: [categoryId], references: [id])
+  thumbnailUrl         String?
+  desktopScreenshotUrl String?
+  mobileScreenshotUrl  String?
+  previewUrl           String?
+  repositoryUrl        String?
+  isFavorite           Boolean        @default(false)
+  status               TemplateStatus @default(DRAFT)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
 
-  tags             TemplateTag[]
-  portalTemplates  PortalTemplate[]
-  portalEvents     PortalEvent[]
-  selections       TemplateSelection[]
+  tags            TemplateTag[]
+  portalTemplates PortalTemplate[]
+  portalEvents    PortalEvent[]
+  selections      TemplateSelection[]
 
   @@index([categoryId])
   @@index([status])
@@ -82,6 +82,9 @@ model TemplateTag {
 
 // --- Clients CRM ---
 
+// Mirrors the 8-step pipeline (Add Lead → Contact → Portal Sent →
+// Template & Plan → Invoice → Building → Delivered → Complete) added on
+// top of the original MVP flow — see ARCHITECTURE.md §4 "Client pipeline".
 enum ClientStatus {
   LEAD
   CONTACTED
@@ -89,27 +92,30 @@ enum ClientStatus {
   PORTAL_SENT
   VIEWED
   TEMPLATE_SELECTED
+  INVOICE_SENT
   BUILDING
+  DELIVERED
   WON
   LOST
 }
 
 model Client {
-  id              String       @id @default(cuid())
-  businessName    String
-  contactName     String
-  email           String
-  phone           String?
-  website         String?
-  industry        String?
-  status          ClientStatus @default(LEAD)
-  leadSource      String?
-  estimatedValue  Decimal?     @db.Decimal(10, 2)
-  notes           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  id             String       @id @default(cuid())
+  businessName   String
+  contactName    String
+  email          String
+  phone          String?
+  website        String?
+  industry       String?
+  status         ClientStatus @default(LEAD)
+  leadSource     String?
+  estimatedValue Decimal?     @db.Decimal(10, 2)
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
-  portals Portal[]
+  portals  Portal[]
+  invoices Invoice[]
 
   @@index([status])
 }
@@ -125,21 +131,24 @@ enum PortalStatus {
 }
 
 model Portal {
-  id             String       @id @default(cuid())
-  clientId       String
-  client         Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  token          String       @unique
-  message        String?
-  status         PortalStatus @default(DRAFT)
-  firstViewedAt  DateTime?
-  lastViewedAt   DateTime?
-  viewCount      Int          @default(0)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id            String       @id @default(cuid())
+  clientId      String
+  client        Client       @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  token         String       @unique
+  message       String?
+  status        PortalStatus @default(DRAFT)
+  firstViewedAt DateTime?
+  lastViewedAt  DateTime?
+  viewCount     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 
-  templates  PortalTemplate[]
-  events     PortalEvent[]
-  selection  TemplateSelection?
+  templates    PortalTemplate[]
+  events       PortalEvent[]
+  selection    TemplateSelection?
+  requirements ProjectRequirements?
+  delivery     Delivery?
+  invoices     Invoice[]
 
   @@index([clientId])
   @@index([token])
@@ -183,10 +192,153 @@ model TemplateSelection {
   id         String   @id @default(cuid())
   portalId   String   @unique
   templateId String
+  // Nullable: selections made before Plan selection was added to the
+  // portal flow won't have one. New selections always set it — see
+  // confirmPortalSelection in src/lib/actions/public-portal.ts.
+  planId     String?
   selectedAt DateTime @default(now())
 
   portal   Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
   template Template @relation(fields: [templateId], references: [id])
+  plan     Plan?    @relation(fields: [planId], references: [id])
 
   @@index([templateId])
+  @@index([planId])
+}
+
+// --- Plans & Pricing (Settings → Plans & Pricing) ---
+
+model Plan {
+  id           String   @id @default(cuid())
+  name         String
+  price        Decimal  @db.Decimal(10, 2)
+  tagline      String?
+  features     String[]
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  selections TemplateSelection[]
+
+  @@index([isActive])
+}
+
+// Single-row app-wide settings (id is always the literal "singleton" — see
+// prisma/seed.mjs, which upserts it). Simpler than a dedicated
+// key/value table for the handful of app-level toggles we have so far.
+model AppSettings {
+  id                         String   @id @default("singleton")
+  showPricingInPortal        Boolean  @default(true)
+  invoiceFromName            String?
+  invoiceFromAddress         String?
+  invoicePaymentInstructions String?
+  invoiceTerms               String   @default("Net 14")
+  updatedAt                  DateTime @updatedAt
+}
+
+// --- Project Requirements (client detail page, filled in after selection) ---
+
+enum ContentStatus {
+  CLIENT_PROVIDED
+  NEEDS_COPYWRITING
+  MIXED
+}
+
+model ProjectRequirements {
+  id               String        @id @default(cuid())
+  portalId         String        @unique
+  pages            String[]
+  features         String[]
+  contentStatus    ContentStatus @default(CLIENT_PROVIDED)
+  targetLaunchDate DateTime?
+  notes            String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  portal Portal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+}
+
+// --- Invoicing ---
+// Track-only for now — no real payment processor. status is set to PAID by
+// the admin manually marking it so. stripeInvoiceId/stripePaymentUrl are
+// reserved, unused columns for a future real Stripe integration, so that
+// swap-in doesn't need another migration — see ARCHITECTURE.md §9.
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+}
+
+model Invoice {
+  id               String        @id @default(cuid())
+  invoiceNumber    String        @unique
+  clientId         String
+  portalId         String?
+  status           InvoiceStatus @default(DRAFT)
+  issueDate        DateTime      @default(now())
+  dueDate          DateTime?
+  taxAmount        Decimal       @default(0) @db.Decimal(10, 2)
+  notes            String?
+  sentAt           DateTime?
+  paidAt           DateTime?
+  stripeInvoiceId  String?
+  stripePaymentUrl String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  client    Client            @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  portal    Portal?           @relation(fields: [portalId], references: [id])
+  lineItems InvoiceLineItem[]
+
+  @@index([clientId])
+  @@index([portalId])
+}
+
+model InvoiceLineItem {
+  id           String  @id @default(cuid())
+  invoiceId    String
+  description  String
+  amount       Decimal @db.Decimal(10, 2)
+  displayOrder Int     @default(0)
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+}
+
+// --- Build & Delivery ---
+
+enum DeliveryStatus {
+  BUILDING
+  DELIVERED
+}
+
+enum ReviewStatus {
+  AWAITING
+  APPROVED
+  CHANGES_REQUESTED
+}
+
+model Delivery {
+  id             String         @id @default(cuid())
+  portalId       String         @unique
+  status         DeliveryStatus @default(BUILDING)
+  stagingUrl     String?
+  liveUrl        String?
+  // Set the moment the site is marked Delivered — that's what the public
+  // review page (/r/[reviewToken]) resolves by, same security pattern as
+  // Portal.token (see ARCHITECTURE.md §6): unguessable, never client ids.
+  reviewToken    String?        @unique
+  reviewStatus   ReviewStatus   @default(AWAITING)
+  reviewFeedback String?
+  deliveredAt    DateTime?
+  reviewedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  portal Portal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+
+  @@index([reviewToken])
 }
