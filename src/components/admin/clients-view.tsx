@@ -55,7 +55,7 @@ export function ClientsView({
                 </button>
               </div>
             ) : null}
-            <Button size="sm" render={<Link href="/clients/new" />}>
+            <Button size="sm" nativeButton={false} render={<Link href="/clients/new" />}>
               <Plus className="h-4 w-4" />
               Add New Client
             </Button>
@@ -69,7 +69,7 @@ export function ClientsView({
           title="Add your first potential client"
           description="Create a client and send them a personalized template selection portal."
           action={
-            <Button size="sm" render={<Link href="/clients/new" />}>
+            <Button size="sm" nativeButton={false} render={<Link href="/clients/new" />}>
               <Plus className="h-4 w-4" />
               Add Client
             </Button>

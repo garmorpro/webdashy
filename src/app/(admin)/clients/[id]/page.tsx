@@ -111,6 +111,7 @@ export default async function ClientDetailPage({
               viewCount={portal.viewCount}
               createdAt={portal.createdAt}
               selectedTemplateName={portal.selection?.template.name ?? null}
+              selectedPlanName={portal.selection?.plan?.name ?? null}
               selectedAt={portal.selection?.selectedAt ?? null}
             />
 
@@ -143,7 +144,7 @@ export default async function ClientDetailPage({
               title="No template portal yet"
               description="Choose a few templates and create a personalized selection portal for this client."
               action={
-                <Button size="sm" render={<Link href={`/clients/${client.id}/portal/new`} />}>
+                <Button size="sm" nativeButton={false} render={<Link href={`/clients/${client.id}/portal/new`} />}>
                   <Plus className="h-4 w-4" />
                   Create Portal
                 </Button>

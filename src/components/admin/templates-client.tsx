@@ -48,7 +48,7 @@ export function TemplatesClient({
         title="All Templates"
         subtitle="Beautiful, customizable website templates to help your clients stand out."
         actions={
-          <Button size="sm" render={<Link href="/templates/new" />}>
+          <Button size="sm" nativeButton={false} render={<Link href="/templates/new" />}>
             <Plus className="h-4 w-4" />
             Add Template
           </Button>
@@ -89,7 +89,7 @@ export function TemplatesClient({
           <p className="mt-1 max-w-sm text-sm text-muted-foreground">
             Add your first website template to start creating client portals.
           </p>
-          <Button size="sm" className="mt-5" render={<Link href="/templates/new" />}>
+          <Button size="sm" className="mt-5" nativeButton={false} render={<Link href="/templates/new" />}>
             <Plus className="h-4 w-4" />
             Add Template
           </Button>

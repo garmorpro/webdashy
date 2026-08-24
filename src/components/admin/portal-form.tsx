@@ -70,7 +70,7 @@ export function PortalForm({
 
       <div className="flex items-center gap-2">
         <SubmitButton label={submitLabel} />
-        <Button variant="outline" render={<Link href={cancelHref} />}>
+        <Button variant="outline" nativeButton={false} render={<Link href={cancelHref} />}>
           Cancel
         </Button>
       </div>

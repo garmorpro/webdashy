@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Copy, ExternalLink, Eye, Ban, CheckCircle2 } from "lucide-react";
+import { Copy, ExternalLink, Eye, Ban, CheckCircle2, Pencil, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export function PortalSummary({
   viewCount,
   createdAt,
   selectedTemplateName,
+  selectedPlanName,
   selectedAt,
 }: {
   portalId: string;
@@ -32,6 +33,7 @@ export function PortalSummary({
   viewCount: number;
   createdAt: Date;
   selectedTemplateName: string | null;
+  selectedPlanName: string | null;
   selectedAt: Date | null;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -55,6 +57,72 @@ export function PortalSummary({
         toast.error("Couldn't update the portal. Please try again.");
       }
     });
+  }
+
+  // Once the client has actually selected, the full link/stats/message
+  // view is mostly noise — collapse to a compact summary, same
+  // locked/active/done pattern as Requirements/Invoice/Delivery below it.
+  // Copy/Open/Reset stay reachable (real, still-useful actions) just in a
+  // lighter-weight row instead of the full card.
+  if (selectedTemplateName) {
+    return (
+      <div className="rounded-xl border border-border bg-card p-5">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
+            <Link2 className="h-4 w-4 text-muted-foreground" />
+            Template Portal
+          </h2>
+          <Button
+            variant="ghost"
+            size="sm"
+            nativeButton={false}
+            render={<Link href={`/clients/${clientId}/portal/edit`} />}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Edit Templates
+          </Button>
+        </div>
+
+        <div className="mt-3 flex items-start gap-2 text-sm text-foreground">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          <span>
+            <b>{selectedTemplateName}</b> template
+            {selectedPlanName ? (
+              <>
+                {" "}
+                · <b>{selectedPlanName}</b> plan
+              </>
+            ) : null}
+            {selectedAt ? (
+              <span className="text-muted-foreground"> · selected {dateFormatter.format(selectedAt)}</span>
+            ) : null}
+          </span>
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+          <Button variant="outline" size="sm" onClick={copyLink}>
+            <Copy className="h-3.5 w-3.5" />
+            Copy Link
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<a href={portalUrl} target="_blank" rel="noopener noreferrer" />}
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Open Portal
+          </Button>
+          <ConfirmDeleteButton
+            triggerLabel="Reset Selection"
+            title="Reset this client's selection?"
+            description="This clears their confirmed template and plan choice so they can pick again. The portal stays active."
+            confirmLabel="Reset Selection"
+            onConfirm={() => resetPortalSelection(portalId, clientId)}
+          />
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -101,21 +169,7 @@ export function PortalSummary({
         </div>
         <div>
           <dt className="text-muted-foreground">Selected Template</dt>
-          <dd className="flex items-center gap-1 text-foreground">
-            {selectedTemplateName ? (
-              <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-                {selectedTemplateName}
-                {selectedAt ? (
-                  <span className="text-muted-foreground">
-                    · {dateFormatter.format(selectedAt)}
-                  </span>
-                ) : null}
-              </>
-            ) : (
-              <span className="text-muted-foreground">Not selected yet</span>
-            )}
-          </dd>
+          <dd className="text-muted-foreground">Not selected yet</dd>
         </div>
         {message ? (
           <div className="sm:col-span-2">
@@ -129,6 +183,7 @@ export function PortalSummary({
         <Button
           variant="outline"
           size="sm"
+          nativeButton={false}
           render={<Link href={`/clients/${clientId}/portal/edit`} />}
         >
           Edit Templates
@@ -147,16 +202,6 @@ export function PortalSummary({
             </>
           )}
         </Button>
-
-        {selectedTemplateName ? (
-          <ConfirmDeleteButton
-            triggerLabel="Reset Selection"
-            title="Reset this client's selection?"
-            description="This clears their confirmed template choice so they can pick again. The portal stays active."
-            confirmLabel="Reset Selection"
-            onConfirm={() => resetPortalSelection(portalId, clientId)}
-          />
-        ) : null}
       </div>
     </div>
   );
