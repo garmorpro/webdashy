@@ -129,7 +129,14 @@ export function TemplateForm({
             <Label htmlFor="categoryId">Category</Label>
             <Select name="categoryId" defaultValue={values.categoryId || undefined}>
               <SelectTrigger id="categoryId" className="w-full">
-                <SelectValue placeholder="Select a category" />
+                {/* Base UI's SelectValue only resolves a label from items
+                    registered inside the (lazily-mounted) popup — before
+                    it's ever been opened once, that map is empty and it
+                    falls back to printing the raw id. An explicit children
+                    render-prop bypasses that lookup entirely. */}
+                <SelectValue placeholder="Select a category">
+                  {(value) => categories.find((c) => c.id === value)?.name ?? String(value)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
@@ -145,7 +152,11 @@ export function TemplateForm({
             <Label htmlFor="status">Status</Label>
             <Select name="status" defaultValue={values.status}>
               <SelectTrigger id="status" className="w-full">
-                <SelectValue />
+                {/* See the category Select above for why this needs an
+                    explicit children render-prop. */}
+                <SelectValue className="capitalize">
+                  {(value) => String(value).toLowerCase()}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="DRAFT">Draft</SelectItem>

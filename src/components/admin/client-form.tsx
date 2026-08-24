@@ -131,7 +131,15 @@ export function ClientForm({
             <Label htmlFor="status">Lead Status</Label>
             <Select name="status" defaultValue={values.status}>
               <SelectTrigger id="status" className="w-full">
-                <SelectValue />
+                {/* Base UI's SelectValue only resolves a label from items
+                    registered inside the (lazily-mounted) popup — before
+                    it's ever been opened once, that map is empty and it
+                    falls back to printing the raw enum value. Passing an
+                    explicit children render-prop bypasses that lookup
+                    entirely, so the label is always correct. */}
+                <SelectValue>
+                  {(value) => CLIENT_STATUS_LABELS[value as ClientStatus] ?? String(value)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {CLIENT_STATUSES.map((s) => (

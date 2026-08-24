@@ -139,7 +139,11 @@ export function RequirementsSection({
           <Label htmlFor="req-content">Content status</Label>
           <Select name="contentStatus" defaultValue={requirements?.contentStatus ?? "CLIENT_PROVIDED"}>
             <SelectTrigger id="req-content" className="w-full">
-              <SelectValue />
+              {/* See client-form.tsx's status Select for why this needs an
+                  explicit children render-prop rather than a bare <SelectValue />. */}
+              <SelectValue>
+                {(value) => CONTENT_STATUS_LABELS[value as ContentStatus] ?? String(value)}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {(Object.keys(CONTENT_STATUS_LABELS) as ContentStatus[]).map((cs) => (
