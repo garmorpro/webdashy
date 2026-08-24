@@ -61,6 +61,58 @@ export const PIPELINE_STEPS = [
   "Complete",
 ] as const;
 
+// Kanban board columns for the Clients page's "Board" view — same pipeline
+// grouping as PIPELINE_STEPS/pipelineStepIndex above, but with LOST broken
+// out into its own trailing column instead of collapsing into "Lead" (the
+// stepper has no use for a distinct Lost step; the board does).
+export type BoardColumnKey =
+  | "LEAD"
+  | "CONTACTED"
+  | "PORTAL_SENT"
+  | "TEMPLATE_SELECTED"
+  | "INVOICE_SENT"
+  | "BUILDING"
+  | "DELIVERED"
+  | "WON"
+  | "LOST";
+
+export const BOARD_COLUMNS: { key: BoardColumnKey; label: string }[] = [
+  { key: "LEAD", label: "Lead" },
+  { key: "CONTACTED", label: "Contacted" },
+  { key: "PORTAL_SENT", label: "Portal Sent" },
+  { key: "TEMPLATE_SELECTED", label: "Template & Plan" },
+  { key: "INVOICE_SENT", label: "Invoice" },
+  { key: "BUILDING", label: "Building" },
+  { key: "DELIVERED", label: "Delivered" },
+  { key: "WON", label: "Won" },
+  { key: "LOST", label: "Lost" },
+];
+
+export function boardColumnKey(status: ClientStatus): BoardColumnKey {
+  switch (status) {
+    case "LEAD":
+      return "LEAD";
+    case "CONTACTED":
+    case "INTERESTED":
+      return "CONTACTED";
+    case "PORTAL_SENT":
+    case "VIEWED":
+      return "PORTAL_SENT";
+    case "TEMPLATE_SELECTED":
+      return "TEMPLATE_SELECTED";
+    case "INVOICE_SENT":
+      return "INVOICE_SENT";
+    case "BUILDING":
+      return "BUILDING";
+    case "DELIVERED":
+      return "DELIVERED";
+    case "WON":
+      return "WON";
+    case "LOST":
+      return "LOST";
+  }
+}
+
 export function pipelineStepIndex(status: ClientStatus): number {
   switch (status) {
     case "LEAD":
