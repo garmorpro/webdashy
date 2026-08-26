@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ClientsTable, type ClientWithPortal } from "@/components/admin/clients-table";
 import { ClientsBoard } from "@/components/admin/clients-board";
+import { QuickAddLeadSheet } from "@/components/admin/quick-add-lead-sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Category, Template } from "@prisma/client";
@@ -80,6 +81,8 @@ export function ClientsView({
       ) : (
         <ClientsBoard clients={clients} />
       )}
+
+      <QuickAddLeadSheet />
     </div>
   );
 }
