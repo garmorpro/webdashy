@@ -68,7 +68,7 @@ export function TemplateCard({ template }: { template: TemplateWithRelations }) 
   }
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-shadow hover:shadow-md">
+    <div className="group overflow-hidden rounded-xl bg-card transition-shadow hover:shadow-[0_14px_32px_-14px_rgba(38,49,94,0.22)]">
       <div className="relative h-40 overflow-hidden">
         {template.thumbnailUrl ? (
           // Arbitrary admin-supplied URLs — next/image would need a

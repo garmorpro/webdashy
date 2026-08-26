@@ -72,10 +72,10 @@ export function TemplatesClient({
             type="button"
             onClick={() => setActiveCategory(category)}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              "rounded-full bg-card px-3.5 py-1.5 text-xs font-bold transition-colors",
               activeCategory === category
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
             {category}
