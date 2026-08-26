@@ -77,7 +77,6 @@ export async function createPortal(
   }
 
   revalidatePath(`/clients/${clientId}`);
-  revalidatePath("/portals");
   redirect(`/clients/${clientId}`);
 }
 
@@ -110,7 +109,6 @@ export async function updatePortalTemplates(
   }
 
   revalidatePath(`/clients/${clientId}`);
-  revalidatePath("/portals");
   redirect(`/clients/${clientId}`);
 }
 
@@ -123,7 +121,6 @@ export async function setPortalDisabled(portalId: string, clientId: string, disa
     data: { status: disabled ? "DISABLED" : "ACTIVE" },
   });
   revalidatePath(`/clients/${clientId}`);
-  revalidatePath("/portals");
 }
 
 export async function resetPortalSelection(portalId: string, clientId: string) {
@@ -153,5 +150,4 @@ export async function resetPortalSelection(portalId: string, clientId: string) {
   ]);
 
   revalidatePath(`/clients/${clientId}`);
-  revalidatePath("/portals");
 }

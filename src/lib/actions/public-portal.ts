@@ -91,7 +91,6 @@ export async function confirmPortalSelection(
   revalidatePath(`/p/${token}`);
   revalidatePath("/clients");
   revalidatePath(`/clients/${portal.clientId}`);
-  revalidatePath("/portals");
 
   // Best-effort — see sendSelectionNotification's own error handling. Never
   // let email trouble affect the response to the client who just selected.

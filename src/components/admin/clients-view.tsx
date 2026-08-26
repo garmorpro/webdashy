@@ -5,17 +5,17 @@ import Link from "next/link";
 import { Plus, Users } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
-import { ClientsTable } from "@/components/admin/clients-table";
+import { ClientsTable, type ClientWithPortal } from "@/components/admin/clients-table";
 import { ClientsBoard } from "@/components/admin/clients-board";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Category, Client, Template } from "@prisma/client";
+import type { Category, Template } from "@prisma/client";
 
 export function ClientsView({
   clients,
   templates,
 }: {
-  clients: Client[];
+  clients: ClientWithPortal[];
   templates: (Template & { category: Category | null })[];
 }) {
   const [view, setView] = useState<"table" | "board">("table");
