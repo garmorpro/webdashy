@@ -1,4 +1,4 @@
-import { randomBytes } from "crypto";
+import { randomBytes, createHash } from "crypto";
 import { slugify } from "@/lib/utils";
 
 /**
@@ -22,4 +22,22 @@ export function generatePortalToken(businessName: string): string {
  */
 export function generateReviewToken(businessName: string): string {
   return generatePortalToken(businessName);
+}
+
+/**
+ * Generates a "forgot password" reset token. Returns both the raw token
+ * (emailed to the user — the only place it ever exists in full) and a
+ * SHA-256 hash of it (what's actually stored in User.resetTokenHash). A
+ * fast hash is fine here — unlike a user's password, this token already
+ * has 256 bits of CSPRNG entropy, so it doesn't need bcrypt's deliberate
+ * slowness, just protection against a DB leak alone being enough to reset
+ * an account (the raw token itself is never stored).
+ */
+export function generatePasswordResetToken(): { token: string; tokenHash: string } {
+  const token = randomBytes(32).toString("hex");
+  return { token, tokenHash: hashResetToken(token) };
+}
+
+export function hashResetToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
 }

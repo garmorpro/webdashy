@@ -5,6 +5,7 @@ import {
   renderInvoiceEmail,
   renderDeliveryReviewEmail,
   renderReviewOutcomeEmail,
+  renderPasswordResetEmail,
 } from "@/lib/email-templates";
 
 let transporter: nodemailer.Transporter | null | undefined;
@@ -180,6 +181,37 @@ export async function sendDeliveryReviewEmail({
     from: `WebDashy <${getFromAddress()}>`,
     to,
     subject: `Your website is ready for review!`,
+    text,
+    html,
+    attachments: [WORDMARK_ATTACHMENT],
+  });
+}
+
+/**
+ * Emails the "forgot password" reset link. Same not-best-effort reasoning
+ * as sendInvoiceEmail — the caller (requestPasswordReset) needs to know if
+ * this failed, even though it always tells the *visitor* the request
+ * "succeeded" regardless, to avoid leaking whether an email is on file.
+ */
+export async function sendPasswordResetEmail({
+  to,
+  name,
+  resetUrl,
+}: {
+  to: string;
+  name: string;
+  resetUrl: string;
+}): Promise<void> {
+  const t = getTransporter();
+  if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
+
+  const html = renderPasswordResetEmail({ name, resetUrl });
+  const text = `Reset your WebDashy password: ${resetUrl}\nThis link expires in 1 hour. If you didn't request this, ignore this email.`;
+
+  await t.sendMail({
+    from: `WebDashy <${getFromAddress()}>`,
+    to,
+    subject: "Reset your WebDashy password",
     text,
     html,
     attachments: [WORDMARK_ATTACHMENT],

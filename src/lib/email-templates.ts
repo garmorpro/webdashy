@@ -262,6 +262,55 @@ export function renderReviewOutcomeEmail({
 </html>`;
 }
 
+/** Sent to the admin themselves — the "forgot password" flow. */
+export function renderPasswordResetEmail({
+  name,
+  resetUrl,
+}: {
+  name: string;
+  resetUrl: string;
+}): string {
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background-color:#f8fafc;font-family:Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:12px;border:1px solid #e2e8f0;">
+            <tr>
+              <td style="background-color:#1b2951;padding:28px 32px;text-align:center;border-radius:12px 12px 0 0;">
+                <img src="cid:wordmark" alt="WebDashy" width="150" style="display:block;margin:0 auto;height:auto;border:0;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px 0;text-align:center;">
+                <h1 style="margin:0;font-size:20px;line-height:1.3;color:#1b2951;font-weight:700;">Reset your password</h1>
+                <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#475569;">Hi ${escapeHtml(name)}, we received a request to reset your WebDashy admin password.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px 8px;text-align:center;">
+                <a href="${resetUrl}" style="display:inline-block;background-color:#a4ff4f;color:#1b2951;font-weight:700;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px;">Reset Password →</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0;text-align:center;">
+                <p style="margin:0;font-size:13px;color:#94a3b8;">This link expires in 1 hour. If you didn't request this, you can safely ignore this email — your password won't change.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 32px;text-align:center;border-top:1px solid #f1f5f9;margin-top:8px;">
+                <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;">You're receiving this because a password reset was requested for your WebDashy admin account.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")

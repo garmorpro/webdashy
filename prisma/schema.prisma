@@ -13,12 +13,20 @@ datasource db {
 // --- Admin ---
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                  String    @id @default(cuid())
+  name                String
+  email               String    @unique
+  passwordHash        String
+  // "Forgot password" flow — a SHA-256 hash of the raw token emailed to the
+  // user, not the token itself (so a DB leak alone can't be used to reset
+  // the password; the raw token only ever exists in the email). Nullable:
+  // unset once used or after successful login isn't required, but is
+  // cleared immediately on a successful reset either way. See
+  // src/lib/actions/password-reset.ts.
+  resetTokenHash      String?   @unique
+  resetTokenExpiresAt DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 }
 
 // --- Template Library ---
