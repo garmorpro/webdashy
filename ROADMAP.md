@@ -56,11 +56,11 @@ Inside the client record:
 - Selection tracking (`TemplateSelection`).
 - Internal client activity feed built from `PortalEvent` history.
 
-## Phase 7 — Dashboard
+## Phase 7 — Dashboard ✅
 
-- Build once real data exists from prior phases.
-- Metrics: total templates, total clients, active portals, templates shared, portal views, selections.
-- Recent activity feed.
+- Real data — `src/app/(admin)/page.tsx` + `dashboard-view.tsx`. Metrics ended up as: total templates, active clients, pipeline value, won this month (the original "templates shared / portal views / selections" trio depended on `PortalEvent` tracking, which is still unwritten everywhere — see the Phase 6 note above; the metrics actually shown here reuse data that's genuinely populated instead).
+- Recent activity feed — merges real `TemplateSelection`/`Invoice`/`Delivery` events (not `PortalEvent`, for the same reason), sorted by timestamp.
+- Pipeline breakdown (Lead / Portal Sent / Invoice / Won counts) reusing the same `boardColumnKey()` grouping as the Clients board view.
 
 ## Phase 8 — Polish
 
@@ -119,7 +119,7 @@ _Update this section as phases complete._
 - [x] Phase 4 — Portal Builder (create/edit templates flow, unique token, copy link — verified live on the VM, 2026-08-22; later extended with a modal wizard + row actions on the Clients list)
 - [x] Phase 5 — Public Portal (full client-facing selection flow, confirm → success screen, email notification on selection — verified live on the VM, 2026-08-22)
 - [ ] Phase 6 — Tracking (viewCount/firstViewedAt/lastViewedAt, PortalEvent logging, activity feed — not started; Portals/Clients pages currently show real structure but viewCount stays honestly at 0)
-- [ ] Phase 7 — Dashboard (still mock data — natural to build after Phase 6 gives it something real to show)
+- [x] Phase 7 — Dashboard (real data)
 - [ ] Phase 8 — Polish
 
 **Also done, outside the phase list**: real brand colors/logo throughout (admin + public portal), row actions (Start Portal wizard, Edit, Archive, Delete) on Clients, row actions (Copy Link, Open, Edit Templates, Disable, Reset Selection) on Portals.

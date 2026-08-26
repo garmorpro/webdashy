@@ -1,92 +1,105 @@
-import {
-  LayoutTemplate,
-  Users,
-  Link2,
-  Send,
-  Eye,
-  MousePointerClick,
-} from "lucide-react";
-import { PageHeader } from "@/components/admin/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { boardColumnKey } from "@/lib/client-status";
+import { DashboardView, type DashboardActivityEntry } from "@/components/admin/dashboard-view";
 
-// Mock data — replaced with real queries once Phase 7 (Dashboard) builds on
-// top of real template/client/portal data. See ROADMAP.md.
-const metrics = [
-  { label: "Total Templates", value: 24, icon: LayoutTemplate },
-  { label: "Total Clients", value: 12, icon: Users },
-  { label: "Active Portals", value: 8, icon: Link2 },
-  { label: "Templates Shared", value: 37, icon: Send },
-  { label: "Portal Views", value: 156, icon: Eye },
-  { label: "Template Selections", value: 5, icon: MousePointerClick },
-];
+// Phase 7 (Dashboard) — real data, replacing the placeholder metrics/
+// activity that shipped with earlier phases. See ROADMAP.md.
+export const dynamic = "force-dynamic";
 
-const recentActivity = [
-  {
-    client: "Acme Construction",
-    action: "Selected Modern Construction",
-    time: "5 minutes ago",
-  },
-  {
-    client: "Bloom & Co. Marketing",
-    action: "Viewed their portal",
-    time: "2 hours ago",
-  },
-  {
-    client: "NextGen Roofing",
-    action: "Portal created",
-    time: "Yesterday",
-  },
-];
+async function getDashboardData() {
+  const startOfMonth = new Date();
+  startOfMonth.setDate(1);
+  startOfMonth.setHours(0, 0, 0, 0);
 
-export default function DashboardPage() {
-  return (
-    <div>
-      <PageHeader
-        title="Dashboard"
-        subtitle="A quick look at your templates, clients, and portal activity."
-      />
+  const [templateCount, clients, selections, invoices, deliveries] = await Promise.all([
+    db.template.count(),
+    db.client.findMany({
+      select: { id: true, businessName: true, status: true, estimatedValue: true, updatedAt: true },
+    }),
+    db.templateSelection.findMany({
+      orderBy: { selectedAt: "desc" },
+      take: 5,
+      include: { template: true, plan: true, portal: { include: { client: true } } },
+    }),
+    db.invoice.findMany({
+      where: { sentAt: { not: null } },
+      orderBy: { sentAt: "desc" },
+      take: 5,
+      include: { client: true, lineItems: true },
+    }),
+    db.delivery.findMany({
+      where: { OR: [{ deliveredAt: { not: null } }, { reviewedAt: { not: null } }] },
+      orderBy: { updatedAt: "desc" },
+      take: 5,
+      include: { portal: { include: { client: true } } },
+    }),
+  ]);
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {metrics.map((metric) => {
-          const Icon = metric.icon;
-          return (
-            <Card key={metric.label} className="border-border shadow-sm">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {metric.label}
-                </CardTitle>
-                <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent text-accent-foreground">
-                  <Icon className="h-4 w-4" />
-                </span>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-semibold text-foreground">
-                  {metric.value}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+  const activeClients = clients.filter((c) => !["WON", "LOST"].includes(boardColumnKey(c.status)));
+  const pipelineValue = activeClients.reduce((sum, c) => sum + Number(c.estimatedValue ?? 0), 0);
+  const wonThisMonth = clients
+    .filter((c) => c.status === "WON" && c.updatedAt >= startOfMonth)
+    .reduce((sum, c) => sum + Number(c.estimatedValue ?? 0), 0);
 
-      <Card className="mt-6 border-border shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base font-semibold">Recent Activity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="divide-y divide-border">
-            {recentActivity.map((item, i) => (
-              <li key={i} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                <div>
-                  <p className="text-sm font-medium text-foreground">{item.client}</p>
-                  <p className="text-sm text-muted-foreground">{item.action}</p>
-                </div>
-                <span className="text-xs text-muted-foreground">{item.time}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  const pipelineStages = [
+    { key: "LEAD", label: "Lead", count: clients.filter((c) => boardColumnKey(c.status) === "LEAD").length },
+    { key: "PORTAL_SENT", label: "Portal Sent", count: clients.filter((c) => boardColumnKey(c.status) === "PORTAL_SENT").length },
+    { key: "INVOICE_SENT", label: "Invoice", count: clients.filter((c) => boardColumnKey(c.status) === "INVOICE_SENT").length },
+    { key: "WON", label: "Won", count: clients.filter((c) => boardColumnKey(c.status) === "WON").length },
+  ];
+
+  const activity: DashboardActivityEntry[] = [];
+  for (const s of selections) {
+    activity.push({
+      clientName: s.portal.client.businessName,
+      text: `Selected ${s.template.name}${s.plan ? ` · ${s.plan.name} plan` : ""}`,
+      at: s.selectedAt,
+    });
+  }
+  for (const inv of invoices) {
+    const total = inv.lineItems.reduce((sum, li) => sum + Number(li.amount), 0) + Number(inv.taxAmount);
+    activity.push({
+      clientName: inv.client.businessName,
+      text: `Invoice sent · $${total.toLocaleString()}`,
+      at: inv.sentAt!,
+    });
+  }
+  for (const d of deliveries) {
+    if (d.reviewedAt) {
+      activity.push({
+        clientName: d.portal.client.businessName,
+        text: d.reviewStatus === "APPROVED" ? "Approved their delivered site" : "Requested changes on their site",
+        at: d.reviewedAt,
+      });
+    } else if (d.deliveredAt) {
+      activity.push({
+        clientName: d.portal.client.businessName,
+        text: "Site marked delivered",
+        at: d.deliveredAt,
+      });
+    }
+  }
+  activity.sort((a, b) => b.at.getTime() - a.at.getTime());
+
+  return {
+    templateCount,
+    activeClientCount: activeClients.length,
+    pipelineValue,
+    wonThisMonth,
+    pipelineStages,
+    activity: activity.slice(0, 6),
+  };
+}
+
+export default async function DashboardPage() {
+  const session = await auth();
+  const user = session?.user?.id
+    ? await db.user.findUnique({ where: { id: session.user.id }, select: { name: true } })
+    : null;
+  const firstName = user?.name?.trim().split(/\s+/)[0] || "there";
+
+  const data = await getDashboardData();
+
+  return <DashboardView firstName={firstName} {...data} />;
 }
