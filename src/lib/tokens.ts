@@ -41,3 +41,20 @@ export function generatePasswordResetToken(): { token: string; tokenHash: string
 export function hashResetToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
+
+/**
+ * Generates a webhook API key (e.g. for the Apple Shortcuts → POST
+ * /api/leads integration). Same shape/security reasoning as
+ * generatePasswordResetToken above: the raw key is CSPRNG-random, so a
+ * fast SHA-256 hash of it is enough — only the hash is ever stored
+ * (AppSettings.apiKeyHash), the raw key is shown to the admin exactly
+ * once, at generation time, and never persisted anywhere in full.
+ */
+export function generateApiKey(): { key: string; keyHash: string } {
+  const key = `wd_${randomBytes(24).toString("hex")}`;
+  return { key, keyHash: hashApiKey(key) };
+}
+
+export function hashApiKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex");
+}

@@ -137,19 +137,19 @@ A client's `status` reaches `WON` once **both** halves of step 8 are true — th
 /templates           Template library
 /templates/new       Add template
 /templates/[id]      Template details / edit
-/clients             Client CRM
+/clients             Client CRM (portal status now shown inline per row — the old standalone /portals list page was removed)
 /clients/new         New client
 /clients/[id]        Client details, portal builder, activity feed
-/portals             Portal management
 /settings            Settings
 ```
 
-**Public (unauthenticated):**
+**Public (unauthenticated) / externally-callable:**
 
 ```
 /p/[token]                    Client template + plan selection portal
 /r/[token]                    Client delivery review (approve / request changes)
 /api/invoices/[id]/pdf        Admin-only invoice PDF view/download (a real route, not a Server Action — see §6)
+/api/leads                    POST-only lead-creation webhook, protected by a static API key rather than a session — see §6
 ```
 
 Both `/p/[token]` and `/r/[token]` must render `noindex` metadata and must resolve data strictly by their own opaque token — never by internal numeric/sequential IDs.
@@ -163,6 +163,7 @@ Both `/p/[token]` and `/r/[token]` must render `noindex` metadata and must resol
   - **Forgot password**: `/forgot-password` → `/reset-password/[token]` (`src/lib/actions/password-reset.ts`). Same unguessable-token security model as the public portal/review links — `User.resetTokenHash` stores a SHA-256 hash of a 256-bit random token, never the raw token (only the emailed link has that), expires after 1 hour, and is cleared the moment it's used. The request step always returns the same generic "check your inbox" response whether or not the email matched an account, so it can't be used to probe which address the admin account uses. Both routes are excluded from `proxy.ts`'s auth check for the same reason `/login` and `/setup` are — this has to work while logged out.
   - Every admin-only Server Action (`src/lib/actions/{clients,portals,templates,plans,settings,requirements,invoices,delivery}.ts`) checks the session itself (`requireAdmin()`/`auth()` as the first line) rather than relying solely on proxy-level page protection. This matters because Next dispatches Server Actions by an internal action ID, not by the request's page pathname — so proxy.ts's exclusion of `/p/` and `/r/` (needed to keep the public portal and review page unauthenticated) doesn't actually stop a raw request to one of those excluded paths, carrying the right action ID, from invoking an admin action. `/api/invoices/[id]/pdf` is a real route (not a Server Action) so the pathname matcher does cover it, but it checks `auth()` too for the same defense-in-depth reason.
 - **Public portal and delivery review** have no login. Security is based entirely on their token being long, cryptographically random, and unguessable (e.g., generated with a CSPRNG, not a sequential ID or predictable slug+counter) — `generatePortalToken()`/`generateReviewToken()` in `src/lib/tokens.ts`. `/p/[token]`, `/r/[token]`, and `/api/auth/*` are explicitly excluded from the proxy's auth check. The Server Actions those pages call (`confirmPortalSelection`, `approveDelivery`, `requestChanges`) are intentionally public for the same reason, and re-validate every id they're passed (template, plan) against the token-resolved portal/delivery rather than trusting the client.
+- **Leads webhook** (`POST /api/leads`, `src/app/api/leads/route.ts`) — built for an Apple Shortcut, but works from anything that can send a JSON POST. Excluded from `proxy.ts`'s session check like `/p/`/`/r/` above, but unlike those it's protected by a **static API key** instead of an unguessable per-resource token, since there's no per-client resource to scope a token to here — the whole endpoint is one admin-wide credential. Managed from Settings → API Access (`regenerateApiKey`/`revokeApiKey` in `src/lib/actions/settings.ts`): only a SHA-256 hash of the key is ever stored (`AppSettings.apiKeyHash`, same pattern as `User.resetTokenHash`), the raw key is shown to the admin exactly once at generation time, and the route compares the hash of the caller's key against the stored hash with `crypto.timingSafeEqual` rather than `===`. Creates a `Client` with `status: "LEAD"` and `leadSource` defaulting to `"Apple Shortcut"`; only `businessName`/`contactName`/`email` are required, matching the same "bare minimum" fields as the mobile Quick Add Lead sheet.
 - Public API/data access for a given token must only ever return data belonging to that portal's client — no cross-client leakage, even under enumeration attempts.
 - Public portal pages set `noindex` (and ideally `nofollow`) via metadata to keep them out of search engines.
 - Secrets and credentials are never committed; required environment variables are documented in `README.md`.

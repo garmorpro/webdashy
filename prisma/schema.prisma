@@ -236,13 +236,20 @@ model Plan {
 // prisma/seed.mjs, which upserts it). Simpler than a dedicated
 // key/value table for the handful of app-level toggles we have so far.
 model AppSettings {
-  id                         String   @id @default("singleton")
-  showPricingInPortal        Boolean  @default(true)
+  id                         String    @id @default("singleton")
+  showPricingInPortal        Boolean   @default(true)
   invoiceFromName            String?
   invoiceFromAddress         String?
   invoicePaymentInstructions String?
-  invoiceTerms               String   @default("Net 14")
-  updatedAt                  DateTime @updatedAt
+  invoiceTerms               String    @default("Net 14")
+  // For the POST /api/leads webhook (e.g. an Apple Shortcut) — same hashed-
+  // secret pattern as User.resetTokenHash above, never store the raw key.
+  // apiKeyPreview is just the key's last 4 chars, purely so the Settings UI
+  // can show "...a1b2" to help tell a rotated key apart from an old one.
+  apiKeyHash                 String?
+  apiKeyPreview              String?
+  apiKeyCreatedAt            DateTime?
+  updatedAt                  DateTime  @updatedAt
 }
 
 // --- Project Requirements (client detail page, filled in after selection) ---

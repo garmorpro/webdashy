@@ -1,12 +1,14 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getAppSettings } from "@/lib/settings";
+import { getAbsoluteUrl } from "@/lib/site-url";
 import { PageHeader } from "@/components/admin/page-header";
 import { ProfileForm } from "@/components/admin/profile-form";
 import { ChangePasswordForm } from "@/components/admin/change-password-form";
 import { PortalPricingToggle } from "@/components/admin/portal-pricing-toggle";
 import { PlansManager } from "@/components/admin/plans-manager";
 import { InvoiceSettingsForm } from "@/components/admin/invoice-settings-form";
+import { ApiAccessSection } from "@/components/admin/api-access-section";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +17,11 @@ export default async function SettingsPage() {
   // proxy.ts guarantees a session exists for any route under (admin), but
   // TypeScript doesn't know that — fall back to empty values rather than
   // asserting, in case that ever changes.
-  const [user, plans, settings] = await Promise.all([
+  const [user, plans, settings, webhookUrl] = await Promise.all([
     session?.user?.id ? db.user.findUnique({ where: { id: session.user.id } }) : null,
     db.plan.findMany({ orderBy: { displayOrder: "asc" } }),
     getAppSettings(),
+    getAbsoluteUrl("/api/leads"),
   ]);
 
   return (
@@ -44,6 +47,13 @@ export default async function SettingsPage() {
           invoiceFromAddress={settings.invoiceFromAddress ?? ""}
           invoicePaymentInstructions={settings.invoicePaymentInstructions ?? ""}
           invoiceTerms={settings.invoiceTerms}
+        />
+
+        <ApiAccessSection
+          webhookUrl={webhookUrl}
+          hasKey={Boolean(settings.apiKeyHash)}
+          keyPreview={settings.apiKeyPreview}
+          createdAt={settings.apiKeyCreatedAt}
         />
       </div>
     </div>

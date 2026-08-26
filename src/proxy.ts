@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
 // Protects every admin route. The public portal (/p/[token]), the delivery
-// review page (/r/[token]), and the auth routes themselves are explicitly
-// excluded — see ARCHITECTURE.md §6: both public pages must never require
-// login, security there comes entirely from their own unguessable token.
+// review page (/r/[token]), the auth routes, and the leads webhook are
+// explicitly excluded — see ARCHITECTURE.md §6: every page/route excluded
+// here must never require login and must check its own security instead
+// (an unguessable token for /p and /r, a static API key for /api/leads —
+// see that route's own comment).
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
@@ -13,7 +15,8 @@ export default auth((req) => {
     pathname.startsWith("/setup") ||
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password") ||
-    pathname.startsWith("/api/auth")
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/leads")
   ) {
     return NextResponse.next();
   }
