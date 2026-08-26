@@ -4,6 +4,7 @@ import { getAppSettings } from "@/lib/settings";
 import { PageHeader } from "@/components/admin/page-header";
 import { ProfileForm } from "@/components/admin/profile-form";
 import { ChangePasswordForm } from "@/components/admin/change-password-form";
+import { PortalPricingToggle } from "@/components/admin/portal-pricing-toggle";
 import { PlansManager } from "@/components/admin/plans-manager";
 import { InvoiceSettingsForm } from "@/components/admin/invoice-settings-form";
 
@@ -24,12 +25,21 @@ export default async function SettingsPage() {
     <div>
       <PageHeader title="Settings" subtitle="Account and application settings." />
 
-      <div className="space-y-6">
+      <div className="space-y-4">
         <ProfileForm name={user?.name ?? ""} email={user?.email ?? ""} />
         <ChangePasswordForm />
-        <PlansManager plans={plans} />
+
+        <div className="rounded-xl bg-card p-6">
+          <h2 className="mb-1 text-sm font-extrabold text-foreground">Client Portal Pricing</h2>
+          <div className="border-b border-border pb-5">
+            <PortalPricingToggle showPricingInPortal={settings.showPricingInPortal} />
+          </div>
+          <div className="mt-5">
+            <PlansManager plans={plans} />
+          </div>
+        </div>
+
         <InvoiceSettingsForm
-          showPricingInPortal={settings.showPricingInPortal}
           invoiceFromName={settings.invoiceFromName ?? ""}
           invoiceFromAddress={settings.invoiceFromAddress ?? ""}
           invoicePaymentInstructions={settings.invoicePaymentInstructions ?? ""}

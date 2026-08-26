@@ -21,13 +21,14 @@ export async function updateAppSettings(
   if (authError) return { error: authError };
 
   const get = (key: string) => String(formData.get(key) ?? "").trim();
-  const showPricingInPortal = formData.get("showPricingInPortal") === "on";
 
+  // Deliberately does NOT touch showPricingInPortal — that field is owned
+  // by togglePortalPricingVisibility below (see its comment) so saving
+  // Invoice Details can never silently flip the pricing toggle off.
   try {
     await db.appSettings.upsert({
       where: { id: SETTINGS_ID },
       update: {
-        showPricingInPortal,
         invoiceFromName: get("invoiceFromName") || null,
         invoiceFromAddress: get("invoiceFromAddress") || null,
         invoicePaymentInstructions: get("invoicePaymentInstructions") || null,
@@ -35,7 +36,6 @@ export async function updateAppSettings(
       },
       create: {
         id: SETTINGS_ID,
-        showPricingInPortal,
         invoiceFromName: get("invoiceFromName") || null,
         invoiceFromAddress: get("invoiceFromAddress") || null,
         invoicePaymentInstructions: get("invoicePaymentInstructions") || null,
@@ -50,4 +50,22 @@ export async function updateAppSettings(
   revalidatePath("/settings");
   revalidatePath("/p", "layout");
   return { success: "Settings saved." };
+}
+
+// Split out from updateAppSettings so the pricing toggle can live visually
+// next to Plans (matching the Settings mockup's grouping) without a save
+// there ever touching the separate Invoice Details fields — a full-form
+// upsert of just the toggle's FormData would null those out.
+export async function togglePortalPricingVisibility(showPricingInPortal: boolean) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
+  await db.appSettings.upsert({
+    where: { id: SETTINGS_ID },
+    update: { showPricingInPortal },
+    create: { id: SETTINGS_ID, showPricingInPortal },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/p", "layout");
 }

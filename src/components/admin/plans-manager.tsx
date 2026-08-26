@@ -37,9 +37,9 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
+    <div>
       <div className="mb-4 flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-foreground">Plans</h2>
+        <h2 className="text-sm font-extrabold text-foreground">Plans</h2>
         <Button size="sm" onClick={() => setFormTarget("new")}>
           <Plus className="h-4 w-4" />
           Add Plan
@@ -53,7 +53,7 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {plans.map((plan, i) => (
-            <div key={plan.id} className="relative flex flex-col rounded-xl border border-border p-4">
+            <div key={plan.id} className="relative flex flex-col rounded-xl bg-secondary p-4">
               <div className="absolute right-3 top-3 flex flex-col">
                 <button
                   type="button"
@@ -84,10 +84,12 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
                 {plan.isActive ? "Active" : "Inactive"}
               </Badge>
 
-              <h3 className="mt-2 text-sm font-semibold text-foreground">{plan.name}</h3>
-              <p className="text-lg font-bold text-foreground">${Number(plan.price).toLocaleString()}</p>
+              <h3 className="mt-3 text-sm font-extrabold text-foreground">{plan.name}</h3>
+              <p className="text-xl font-extrabold text-foreground">
+                ${Number(plan.price).toLocaleString()}
+              </p>
               {plan.tagline ? (
-                <p className="mt-0.5 text-xs text-muted-foreground">{plan.tagline}</p>
+                <p className="mt-0.5 text-xs font-medium text-muted-foreground">{plan.tagline}</p>
               ) : null}
 
               {plan.features.length > 0 ? (
@@ -101,8 +103,8 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
                 </ul>
               ) : null}
 
-              <div className="mt-4 flex items-center gap-1 border-t border-border pt-3">
-                <Button variant="outline" size="sm" onClick={() => setFormTarget(plan)}>
+              <div className="mt-4 flex items-center gap-1 border-t border-border/60 pt-3">
+                <Button variant="outline" size="sm" className="bg-card" onClick={() => setFormTarget(plan)}>
                   <Pencil className="h-3.5 w-3.5" />
                   Edit
                 </Button>
