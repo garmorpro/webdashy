@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-display-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -49,76 +49,80 @@
 }
 
 :root {
-  /* WebDashy design system — see ARCHITECTURE.md §8 / product-build.md §22.
-     Brand palette: navy #1B2951 + lime #A4FF4F (from the logo). Light gray
-     app background, white cards, navy text, lime primary actions, thin
-     neutral borders (kept neutral on purpose — not brand-colored, per
-     product-build.md's "thin neutral borders" direction), soft shadows. */
-  --background: #f8fafc; /* slate-50 */
-  --foreground: #1b2951; /* brand navy */
+  /* WebDashy design system — "Soft Grid" redesign (2026-08-26), chosen from
+     three directions mocked up on a design canvas. Brand palette stays
+     navy + lime, but softened: a pale lavender-navy app background,
+     heavily rounded white cards on soft shadows instead of borders, a
+     softened navy ink (#26315E, not the literal brand #1B2951 — that
+     exact value is kept for the logo mark and the public portal's dark
+     hero, where full-strength navy still belongs), and pastel-tinted
+     chips (pale lime, pale blue, pale amber, pale purple) standing in for
+     the old bg-X-50/text-X-700 status badges. See ARCHITECTURE.md §8. */
+  --background: #f3f5fb;
+  --foreground: #26315e;
   --card: #ffffff;
-  --card-foreground: #1b2951;
+  --card-foreground: #26315e;
   --popover: #ffffff;
-  --popover-foreground: #1b2951;
-  --primary: #a4ff4f; /* brand lime */
-  --primary-foreground: #1b2951; /* navy text on lime — bright bg needs dark text */
-  --secondary: #f1f5f9; /* slate-100 */
-  --secondary-foreground: #1b2951;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b; /* slate-500 */
-  --accent: #f0ffdf; /* pale lime tint */
-  --accent-foreground: #1b2951;
-  --destructive: #dc2626;
-  --border: #e2e8f0; /* slate-200 */
-  --input: #e2e8f0;
+  --popover-foreground: #26315e;
+  --primary: #a4ff4f; /* brand lime, unchanged */
+  --primary-foreground: #1d2a0e; /* dark olive — better contrast on lime than navy */
+  --secondary: #f3f5fb; /* same as background — the "filled input" look inside a white card */
+  --secondary-foreground: #26315e;
+  --muted: #f3f5fb;
+  --muted-foreground: #8a93b8;
+  --accent: #effee0; /* pale lime chip — active-nav / active-plan background */
+  --accent-foreground: #3e6013;
+  --destructive: #d3455c;
+  --border: #eef1fa; /* barely-there — cards lean on shadow, not border, for edges */
+  --input: #eef1fa;
   --ring: #a4ff4f;
   --chart-1: #a4ff4f;
-  --chart-2: #1b2951;
-  --chart-3: #64748b;
-  --chart-4: #94a3b8;
-  --chart-5: #cbd5e1;
-  --radius: 0.75rem;
+  --chart-2: #26315e;
+  --chart-3: #8a93b8;
+  --chart-4: #b7c3e8;
+  --chart-5: #dfe3f5;
+  --radius: 1.1rem;
   --sidebar: #ffffff;
-  --sidebar-foreground: #1b2951;
+  --sidebar-foreground: #26315e;
   --sidebar-primary: #a4ff4f;
-  --sidebar-primary-foreground: #1b2951;
-  --sidebar-accent: #a4ff4f; /* full brand lime — needs to pop as the active-nav indicator, a pale tint read as barely-there */
-  --sidebar-accent-foreground: #1b2951;
-  --sidebar-border: #e2e8f0;
+  --sidebar-primary-foreground: #1d2a0e;
+  --sidebar-accent: #effee0; /* pale lime chip + a small bright-lime dot does the "pop" job now, not a solid block */
+  --sidebar-accent-foreground: #26315e;
+  --sidebar-border: #eef1fa;
   --sidebar-ring: #a4ff4f;
 }
 
 .dark {
-  --background: #1b2951; /* brand navy, used directly as the dark surface */
-  --foreground: #e2e8f0;
-  --card: #22315c;
-  --card-foreground: #e2e8f0;
-  --popover: #22315c;
-  --popover-foreground: #e2e8f0;
+  --background: #0f1730;
+  --foreground: #e4e8f7;
+  --card: #182142;
+  --card-foreground: #e4e8f7;
+  --popover: #182142;
+  --popover-foreground: #e4e8f7;
   --primary: #a4ff4f;
-  --primary-foreground: #1b2951;
-  --secondary: #2a3a68;
-  --secondary-foreground: #e2e8f0;
-  --muted: #2a3a68;
-  --muted-foreground: #94a3b8;
-  --accent: #2c3a2a; /* dark lime-tinted chip */
-  --accent-foreground: #d4ffb0;
-  --destructive: #f87171;
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --primary-foreground: #1d2a0e;
+  --secondary: #212b52;
+  --secondary-foreground: #e4e8f7;
+  --muted: #212b52;
+  --muted-foreground: #97a1c9;
+  --accent: #223420; /* dark lime-tinted chip */
+  --accent-foreground: #c8f79b;
+  --destructive: #f0708a;
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
   --ring: #a4ff4f;
   --chart-1: #a4ff4f;
-  --chart-2: #94a3b8;
-  --chart-3: #64748b;
-  --chart-4: #475569;
-  --chart-5: #2a3a68;
-  --sidebar: #17213f;
-  --sidebar-foreground: #e2e8f0;
+  --chart-2: #97a1c9;
+  --chart-3: #6b7599;
+  --chart-4: #46507a;
+  --chart-5: #212b52;
+  --sidebar: #131b39;
+  --sidebar-foreground: #e4e8f7;
   --sidebar-primary: #a4ff4f;
-  --sidebar-primary-foreground: #1b2951;
-  --sidebar-accent: #2c3a2a;
-  --sidebar-accent-foreground: #d4ffb0;
-  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-primary-foreground: #1d2a0e;
+  --sidebar-accent: #223420;
+  --sidebar-accent-foreground: #c8f79b;
+  --sidebar-border: oklch(1 0 0 / 8%);
   --sidebar-ring: #a4ff4f;
 }
 
@@ -131,5 +135,15 @@
   }
   html {
     @apply font-sans;
+  }
+
+  /* Soft Grid redesign: every bg-card surface (admin cards, popovers,
+     dialogs, dropdown menus) picks up a shared soft shadow here, instead
+     of every component needing its own shadow utility — cards already
+     lean on --border being nearly invisible (see :root) rather than a
+     visible outline, so this one rule is what actually reads as "the
+     card's edge" across the whole app. */
+  .bg-card {
+    box-shadow: 0 8px 24px -14px rgba(38, 49, 94, 0.14);
   }
 }

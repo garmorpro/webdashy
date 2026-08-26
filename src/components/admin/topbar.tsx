@@ -42,7 +42,7 @@ export function Topbar({
   const [, startTransition] = useTransition();
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 md:px-8">
+    <header className="flex h-20 items-center justify-between px-4 md:px-8">
       <div className="flex items-center gap-2 md:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger
@@ -85,9 +85,9 @@ export function Topbar({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <button type="button" aria-label="Account menu" className="rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-accent text-accent-foreground text-xs font-medium">
+              <button type="button" aria-label="Account menu" className="rounded-2xl">
+                <Avatar className="h-11 w-11 rounded-2xl">
+                  <AvatarFallback className="rounded-2xl bg-foreground text-sm font-bold text-background">
                     {initialsFor(user?.name, user?.email)}
                   </AvatarFallback>
                 </Avatar>

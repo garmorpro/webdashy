@@ -7,41 +7,44 @@ export function ClientStepper({ status }: { status: ClientStatus }) {
   const current = pipelineStepIndex(status);
 
   return (
-    <div className="mb-2 flex items-start gap-0 overflow-x-auto pb-3 pt-1">
-      {PIPELINE_STEPS.map((label, i) => {
-        const done = i < current;
-        const isCurrent = i === current;
-        return (
-          <div key={label} className="relative flex min-w-[84px] flex-col items-center">
-            {i > 0 ? (
+    <div className="rounded-3xl bg-card p-6">
+      <div className="flex items-start gap-0 overflow-x-auto">
+        {PIPELINE_STEPS.map((label, i) => {
+          const done = i < current;
+          const isCurrent = i === current;
+          return (
+            <div key={label} className="relative flex min-w-[90px] flex-col items-center gap-2">
+              {i > 0 ? (
+                <div
+                  className={cn(
+                    "absolute left-[-50%] top-[17px] h-1 w-full rounded-full",
+                    done ? "bg-primary" : "bg-secondary"
+                  )}
+                />
+              ) : null}
               <div
                 className={cn(
-                  "absolute left-[-50%] top-[13px] h-0.5 w-full",
-                  done ? "bg-primary" : "bg-border"
+                  "z-10 flex h-[34px] w-[34px] items-center justify-center rounded-full text-xs font-extrabold",
+                  done && "bg-primary text-primary-foreground",
+                  isCurrent &&
+                    "border-[3px] border-primary bg-card text-foreground shadow-[0_0_0_5px_var(--accent)]",
+                  !done && !isCurrent && "border-2 border-border bg-background text-muted-foreground"
                 )}
-              />
-            ) : null}
-            <div
-              className={cn(
-                "z-10 flex h-[26px] w-[26px] items-center justify-center rounded-full border-2 text-[11px] font-extrabold",
-                done && "border-primary bg-primary text-primary-foreground",
-                isCurrent && "border-primary text-foreground shadow-[0_0_0_3px_rgba(164,255,79,0.3)]",
-                !done && !isCurrent && "border-border bg-card text-muted-foreground"
-              )}
-            >
-              {done ? <Check className="h-3 w-3" /> : i + 1}
+              >
+                {done ? <Check className="h-3.5 w-3.5" /> : i + 1}
+              </div>
+              <div
+                className={cn(
+                  "max-w-[88px] text-center text-[11px] leading-tight",
+                  done || isCurrent ? "font-bold text-foreground" : "font-semibold text-muted-foreground"
+                )}
+              >
+                {label}
+              </div>
             </div>
-            <div
-              className={cn(
-                "mt-1.5 max-w-[84px] text-center text-[11px] font-semibold leading-tight",
-                done || isCurrent ? "text-foreground" : "text-muted-foreground"
-              )}
-            >
-              {label}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }

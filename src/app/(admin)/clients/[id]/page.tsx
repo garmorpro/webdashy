@@ -68,7 +68,9 @@ export default async function ClientDetailPage({
         actions={<DeleteClientButton clientId={client.id} clientName={client.businessName} />}
       />
 
-      <ClientStepper status={client.status} />
+      <div className="mb-6">
+        <ClientStepper status={client.status} />
+      </div>
 
       <div className="space-y-6">
         {client.status === "WON" ? (

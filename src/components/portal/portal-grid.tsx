@@ -101,7 +101,7 @@ export function PortalGrid({
         </p>
       )}
 
-      <div className="sticky bottom-4 mt-10 flex flex-col items-center gap-3 rounded-2xl bg-[#0f172a] px-6 py-4 text-center shadow-2xl sm:flex-row sm:justify-between sm:text-left">
+      <div className="sticky bottom-4 mt-10 flex flex-col items-center gap-3 rounded-2xl bg-[#26315e] px-6 py-4 text-center shadow-2xl sm:flex-row sm:justify-between sm:text-left">
         <p className="text-sm text-slate-300">
           {selectedTemplate || selectedPlan ? (
             <>
