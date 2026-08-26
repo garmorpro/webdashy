@@ -25,9 +25,15 @@ import { CreatePortalDialog } from "@/components/admin/create-portal-dialog";
 import { ConfirmActionDialog } from "@/components/admin/confirm-action-dialog";
 import { archiveClient, deleteClient } from "@/lib/actions/clients";
 import { CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLES } from "@/lib/client-status";
+import { avatarColorsFor, initialsFor } from "@/lib/avatar-colors";
 import type { Category, Client, Template } from "@prisma/client";
 
 const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+
+function avatarStyleFor(name: string): React.CSSProperties {
+  const colors = avatarColorsFor(name);
+  return { backgroundColor: colors.bg, color: colors.text };
+}
 
 export function ClientsTable({
   clients,
@@ -76,10 +82,20 @@ export function ClientsTable({
                 onClick={() => router.push(`/clients/${client.id}`)}
               >
                 <TableCell>
-                  <span className="font-medium text-foreground">{client.businessName}</span>
-                  <span className="block text-xs text-muted-foreground">
-                    {client.contactName}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-extrabold"
+                      style={avatarStyleFor(client.businessName)}
+                    >
+                      {initialsFor(client.businessName)}
+                    </div>
+                    <div>
+                      <span className="font-bold text-foreground">{client.businessName}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {client.contactName}
+                      </span>
+                    </div>
+                  </div>
                 </TableCell>
                 <TableCell>
                   <Badge

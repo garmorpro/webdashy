@@ -35,7 +35,7 @@ export function ClientsView({
                   className={cn(
                     "rounded-full px-3 py-1 text-xs font-bold transition-colors",
                     view === "table"
-                      ? "bg-card text-foreground shadow-sm"
+                      ? "bg-foreground text-background"
                       : "text-muted-foreground"
                   )}
                 >
@@ -47,7 +47,7 @@ export function ClientsView({
                   className={cn(
                     "rounded-full px-3 py-1 text-xs font-bold transition-colors",
                     view === "board"
-                      ? "bg-card text-foreground shadow-sm"
+                      ? "bg-foreground text-background"
                       : "text-muted-foreground"
                   )}
                 >
