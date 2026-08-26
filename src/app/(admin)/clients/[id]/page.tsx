@@ -2,18 +2,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Link2, Plus, PartyPopper } from "lucide-react";
 import { db } from "@/lib/db";
-import { PageHeader } from "@/components/admin/page-header";
 import { EmptyState } from "@/components/admin/empty-state";
-import { ClientForm } from "@/components/admin/client-form";
+import { ClientContactSection } from "@/components/admin/client-contact-section";
 import { DeleteClientButton } from "@/components/admin/delete-client-button";
 import { PortalSummary } from "@/components/admin/portal-summary";
 import { ClientStepper } from "@/components/admin/client-stepper";
 import { RequirementsSection } from "@/components/admin/requirements-section";
 import { InvoiceSection } from "@/components/admin/invoice-section";
 import { DeliverySection } from "@/components/admin/delivery-section";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { updateClient } from "@/lib/actions/clients";
-import { CLIENT_STATUS_LABELS } from "@/lib/client-status";
+import { CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLES } from "@/lib/client-status";
+import { avatarColorsFor, initialsFor } from "@/lib/avatar-colors";
 import { getAbsoluteUrl } from "@/lib/site-url";
 
 export const dynamic = "force-dynamic";
@@ -55,18 +56,42 @@ export default async function ClientDetailPage({
 
   const boundUpdate = updateClient.bind(null, client.id);
 
-  const dateFormatter = new Intl.DateTimeFormat("en-US", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  });
+  const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+  const avatarColors = avatarColorsFor(client.businessName);
 
   return (
     <div>
-      <PageHeader
-        title={client.businessName}
-        subtitle={`${CLIENT_STATUS_LABELS[client.status]} · Added ${dateFormatter.format(client.createdAt)} · Last updated ${dateFormatter.format(client.updatedAt)}`}
-        actions={<DeleteClientButton clientId={client.id} clientName={client.businessName} />}
-      />
+      <div className="mb-3.5 text-xs font-semibold text-muted-foreground">
+        <Link href="/clients" className="hover:text-foreground hover:underline">
+          Clients
+        </Link>{" "}
+        / {client.businessName}
+      </div>
+
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-lg font-extrabold"
+            style={{ backgroundColor: avatarColors.bg, color: avatarColors.text }}
+          >
+            {initialsFor(client.businessName)}
+          </div>
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+              {client.businessName}
+            </h1>
+            <p className="mt-0.5 text-sm font-medium text-muted-foreground">
+              {client.contactName} · Added {dateFormatter.format(client.createdAt)}
+            </p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2.5">
+          <Badge variant="secondary" className={CLIENT_STATUS_STYLES[client.status]}>
+            {CLIENT_STATUS_LABELS[client.status]}
+          </Badge>
+          <DeleteClientButton clientId={client.id} clientName={client.businessName} iconOnly />
+        </div>
+      </div>
 
       <div className="mb-6">
         <ClientStepper status={client.status} />
@@ -83,11 +108,10 @@ export default async function ClientDetailPage({
           </div>
         ) : null}
 
-        <ClientForm
+        <ClientContactSection
           action={boundUpdate}
-          submitLabel="Save Changes"
-          cancelHref="/clients"
-          defaultValues={{
+          cancelHref={`/clients/${client.id}`}
+          values={{
             businessName: client.businessName,
             contactName: client.contactName,
             email: client.email,

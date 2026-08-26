@@ -13,12 +13,16 @@ export function ConfirmDeleteButton({
   triggerLabel = "Delete",
   confirmLabel,
   onConfirm,
+  iconOnly = false,
 }: {
   title: string;
   description: string;
   triggerLabel?: string;
   confirmLabel: string;
   onConfirm: () => Promise<void>;
+  /** Renders just the trash icon in a square button, no label — for a
+   * compact header slot rather than an inline action row. */
+  iconOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -26,12 +30,13 @@ export function ConfirmDeleteButton({
     <>
       <Button
         variant="destructive"
-        size="sm"
+        size={iconOnly ? "icon" : "sm"}
         render={<button type="button" />}
         onClick={() => setOpen(true)}
+        aria-label={iconOnly ? triggerLabel : undefined}
       >
         <Trash2 className="h-4 w-4" />
-        {triggerLabel}
+        {iconOnly ? null : triggerLabel}
       </Button>
       <ConfirmActionDialog
         open={open}
