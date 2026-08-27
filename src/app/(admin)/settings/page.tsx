@@ -4,7 +4,6 @@ import { getAppSettings } from "@/lib/settings";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { PageHeader } from "@/components/admin/page-header";
 import { ProfileForm } from "@/components/admin/profile-form";
-import { ChangePasswordForm } from "@/components/admin/change-password-form";
 import { PortalPricingToggle } from "@/components/admin/portal-pricing-toggle";
 import { PlansManager } from "@/components/admin/plans-manager";
 import { InvoiceSettingsForm } from "@/components/admin/invoice-settings-form";
@@ -30,7 +29,6 @@ export default async function SettingsPage() {
 
       <div className="space-y-4">
         <ProfileForm name={user?.name ?? ""} email={user?.email ?? ""} />
-        <ChangePasswordForm />
 
         <div className="rounded-xl bg-card p-6">
           <h2 className="mb-1 text-sm font-extrabold text-foreground">Client Portal Pricing</h2>

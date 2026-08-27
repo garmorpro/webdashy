@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ChangePasswordDialog } from "@/components/admin/change-password-dialog";
 import { updateProfile, type AccountActionState } from "@/lib/actions/account";
 
 // Shared "filled" field treatment for Settings — a tinted, borderless box
@@ -84,7 +85,10 @@ export function ProfileForm({ name, email }: { name: string; email: string }) {
           </div>
         </div>
 
-        <SubmitButton />
+        <div className="flex shrink-0 items-center gap-2">
+          <ChangePasswordDialog />
+          <SubmitButton />
+        </div>
       </div>
     </form>
   );
