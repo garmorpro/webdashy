@@ -108,7 +108,7 @@ export default async function ClientDetailPage({
         <ClientStepper clientId={client.id} status={client.status} />
       </div>
 
-      <div className="space-y-6">
+      <div className="max-w-2xl space-y-6">
         {client.status === "WON" ? (
           <div className="rounded-xl border border-emerald-500/25 bg-emerald-50 px-6 py-6 text-center">
             <PartyPopper className="mx-auto h-7 w-7 text-emerald-600" />
@@ -187,19 +187,17 @@ export default async function ClientDetailPage({
             reason="Available once the Design Questionnaire is submitted."
           />
         ) : (
-          <div className="max-w-2xl">
-            <EmptyState
-              icon={Link2}
-              title="No template portal yet"
-              description="Choose a few templates and create a personalized selection portal for this client."
-              action={
-                <Button size="sm" nativeButton={false} render={<Link href={`/clients/${client.id}/portal/new`} />}>
-                  <Plus className="h-4 w-4" />
-                  Create Portal
-                </Button>
-              }
-            />
-          </div>
+          <EmptyState
+            icon={Link2}
+            title="No template portal yet"
+            description="Choose a few templates and create a personalized selection portal for this client."
+            action={
+              <Button size="sm" nativeButton={false} render={<Link href={`/clients/${client.id}/portal/new`} />}>
+                <Plus className="h-4 w-4" />
+                Create Portal
+              </Button>
+            }
+          />
         )}
       </div>
     </div>
