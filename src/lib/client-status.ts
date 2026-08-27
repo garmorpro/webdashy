@@ -72,6 +72,29 @@ export const PIPELINE_STEPS = [
   "Complete",
 ] as const;
 
+// One canonical ClientStatus per PIPELINE_STEPS position — used when an
+// admin clicks a *past* (already-completed) step on the stepper to
+// manually correct the client's status back to it (ClientStepper). Where a
+// step folds together two statuses (e.g. "Contact" covers CONTACTED and
+// INTERESTED), this picks the base one — the other is really an automatic
+// sub-flag, not something an admin sets by hand.
+const PIPELINE_STEP_STATUS: ClientStatus[] = [
+  "LEAD",
+  "CONTACTED",
+  "QUESTIONNAIRE_SENT",
+  "QUESTIONNAIRE_DONE",
+  "PORTAL_SENT",
+  "TEMPLATE_SELECTED",
+  "INVOICE_SENT",
+  "BUILDING",
+  "DELIVERED",
+  "WON",
+];
+
+export function statusForPipelineStep(index: number): ClientStatus {
+  return PIPELINE_STEP_STATUS[index] ?? "LEAD";
+}
+
 // Kanban board columns for the Clients page's "Board" view — same pipeline
 // grouping as PIPELINE_STEPS/pipelineStepIndex above, but with LOST broken
 // out into its own trailing column instead of collapsing into "Lead" (the

@@ -99,7 +99,7 @@ export default async function ClientDetailPage({
       </div>
 
       <div className="mb-6">
-        <ClientStepper status={client.status} />
+        <ClientStepper clientId={client.id} status={client.status} />
       </div>
 
       <div className="space-y-6">
