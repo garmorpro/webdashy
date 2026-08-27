@@ -97,6 +97,8 @@ enum ClientStatus {
   LEAD
   CONTACTED
   INTERESTED
+  QUESTIONNAIRE_SENT
+  QUESTIONNAIRE_DONE
   PORTAL_SENT
   VIEWED
   TEMPLATE_SELECTED
@@ -122,10 +124,41 @@ model Client {
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
-  portals  Portal[]
-  invoices Invoice[]
+  portals       Portal[]
+  invoices      Invoice[]
+  questionnaire DesignQuestionnaire?
 
   @@index([status])
+}
+
+// --- Design Questionnaire (sent after a lead confirms they want a site,
+// before a template portal exists — see DesignQuestionnaire below) ---
+
+enum QuestionnaireStatus {
+  SENT
+  IN_PROGRESS
+  SUBMITTED
+}
+
+// One per client (a client is only ever sent one questionnaire — resending
+// reuses the same row/token rather than creating a second one). `answers`
+// is a single JSON blob keyed by field id (see src/lib/questionnaire-schema.ts
+// for the ~35-field schema and TS types) rather than one column per
+// question — unlike ProjectRequirements/Invoice, nothing here needs to be
+// individually queried or filtered, it's just a long free-text intake form,
+// and a JSON blob means adding/renaming a question later never needs a
+// migration.
+model DesignQuestionnaire {
+  id          String              @id @default(cuid())
+  clientId    String              @unique
+  client      Client              @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  token       String              @unique
+  status      QuestionnaireStatus @default(SENT)
+  answers     Json?
+  sentAt      DateTime            @default(now())
+  submittedAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
 }
 
 // --- Portals ---

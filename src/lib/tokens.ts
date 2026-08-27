@@ -24,6 +24,11 @@ export function generateReviewToken(businessName: string): string {
   return generatePortalToken(businessName);
 }
 
+/** Same shape/security model as generatePortalToken — DesignQuestionnaire.token. */
+export function generateQuestionnaireToken(businessName: string): string {
+  return generatePortalToken(businessName);
+}
+
 /**
  * Generates a "forgot password" reset token. Returns both the raw token
  * (emailed to the user — the only place it ever exists in full) and a

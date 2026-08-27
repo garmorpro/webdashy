@@ -6,6 +6,8 @@ import {
   renderDeliveryReviewEmail,
   renderReviewOutcomeEmail,
   renderPasswordResetEmail,
+  renderQuestionnaireEmail,
+  renderQuestionnaireSubmittedEmail,
 } from "@/lib/email-templates";
 
 let transporter: nodemailer.Transporter | null | undefined;
@@ -254,5 +256,71 @@ export async function sendReviewOutcomeNotification({
     });
   } catch (err) {
     console.error("Failed to send review outcome notification email:", err);
+  }
+}
+
+/**
+ * Emails the client their unique Design Questionnaire link. Not
+ * best-effort — same reasoning as sendInvoiceEmail: the admin action that
+ * triggers this ("Send Questionnaire") needs to know whether the client
+ * actually received it, since there's no other confirmation path.
+ */
+export async function sendQuestionnaireEmail({
+  to,
+  contactName,
+  businessName,
+  formUrl,
+}: {
+  to: string;
+  contactName: string;
+  businessName: string;
+  formUrl: string;
+}): Promise<void> {
+  const t = getTransporter();
+  if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
+
+  const html = renderQuestionnaireEmail({ contactName, businessName, formUrl });
+  const text = `Hi ${contactName}, please fill out ${businessName}'s Design Questionnaire: ${formUrl}\nYou can save your progress and come back any time before submitting.`;
+
+  await t.sendMail({
+    from: `WebDashy <${getFromAddress()}>`,
+    to,
+    subject: "Let's design your new website — a quick questionnaire",
+    text,
+    html,
+    attachments: [WORDMARK_ATTACHMENT],
+  });
+}
+
+/**
+ * Notifies the admin when a client submits their Design Questionnaire —
+ * best-effort, mirrors sendSelectionNotification: never let a failed send
+ * here affect the client-facing submit confirmation.
+ */
+export async function sendQuestionnaireSubmittedNotification({
+  clientName,
+  clientAdminUrl,
+}: {
+  clientName: string;
+  clientAdminUrl: string;
+}): Promise<void> {
+  const t = getTransporter();
+  if (!t) return;
+
+  const to = process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER;
+  const html = renderQuestionnaireSubmittedEmail({ clientName, clientAdminUrl });
+  const text = `${clientName} submitted their Design Questionnaire.\nView responses: ${clientAdminUrl}`;
+
+  try {
+    await t.sendMail({
+      from: `WebDashy <${getFromAddress()}>`,
+      to,
+      subject: `${clientName} submitted their Design Questionnaire`,
+      text,
+      html,
+      attachments: [WORDMARK_ATTACHMENT],
+    });
+  } catch (err) {
+    console.error("Failed to send questionnaire submitted notification email:", err);
   }
 }

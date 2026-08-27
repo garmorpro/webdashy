@@ -2,11 +2,16 @@ import type { ClientStatus } from "@prisma/client";
 
 // Mirrors product-build.md §6 "Client statuses", extended with the 8-step
 // pipeline (ARCHITECTURE.md §4 "Client pipeline"): INVOICE_SENT and
-// DELIVERED were added alongside Plans/Invoicing/Delivery.
+// DELIVERED were added alongside Plans/Invoicing/Delivery, and
+// QUESTIONNAIRE_SENT/QUESTIONNAIRE_DONE were added alongside the Design
+// Questionnaire feature (sent once a lead confirms they want a site,
+// filled in before a template portal exists).
 export const CLIENT_STATUSES: ClientStatus[] = [
   "LEAD",
   "CONTACTED",
   "INTERESTED",
+  "QUESTIONNAIRE_SENT",
+  "QUESTIONNAIRE_DONE",
   "PORTAL_SENT",
   "VIEWED",
   "TEMPLATE_SELECTED",
@@ -21,6 +26,8 @@ export const CLIENT_STATUS_LABELS: Record<ClientStatus, string> = {
   LEAD: "Lead",
   CONTACTED: "Contacted",
   INTERESTED: "Interested",
+  QUESTIONNAIRE_SENT: "Questionnaire Sent",
+  QUESTIONNAIRE_DONE: "Questionnaire Done",
   PORTAL_SENT: "Portal Sent",
   VIEWED: "Viewed",
   TEMPLATE_SELECTED: "Template Selected",
@@ -35,6 +42,8 @@ export const CLIENT_STATUS_STYLES: Record<ClientStatus, string> = {
   LEAD: "bg-slate-100 text-slate-700",
   CONTACTED: "bg-slate-100 text-slate-700",
   INTERESTED: "bg-blue-50 text-blue-700",
+  QUESTIONNAIRE_SENT: "bg-violet-50 text-violet-700",
+  QUESTIONNAIRE_DONE: "bg-fuchsia-50 text-fuchsia-700",
   PORTAL_SENT: "bg-blue-50 text-blue-700",
   VIEWED: "bg-indigo-50 text-indigo-700",
   TEMPLATE_SELECTED: "bg-amber-50 text-amber-700",
@@ -45,7 +54,7 @@ export const CLIENT_STATUS_STYLES: Record<ClientStatus, string> = {
   LOST: "bg-rose-50 text-rose-700",
 };
 
-// The 8-step pipeline shown as a stepper on the client detail page — a
+// The 10-step pipeline shown as a stepper on the client detail page — a
 // simplified, fixed sequence distinct from the full ClientStatus enum
 // above (e.g. LEAD/CONTACTED/INTERESTED collapse into one "Add Lead /
 // Contact" pair of steps). Maps a ClientStatus to how far along the
@@ -53,6 +62,8 @@ export const CLIENT_STATUS_STYLES: Record<ClientStatus, string> = {
 export const PIPELINE_STEPS = [
   "Add Lead",
   "Contact",
+  "Questionnaire Sent",
+  "Questionnaire Done",
   "Portal Sent",
   "Template & Plan",
   "Invoice",
@@ -68,6 +79,8 @@ export const PIPELINE_STEPS = [
 export type BoardColumnKey =
   | "LEAD"
   | "CONTACTED"
+  | "QUESTIONNAIRE_SENT"
+  | "QUESTIONNAIRE_DONE"
   | "PORTAL_SENT"
   | "TEMPLATE_SELECTED"
   | "INVOICE_SENT"
@@ -79,6 +92,8 @@ export type BoardColumnKey =
 export const BOARD_COLUMNS: { key: BoardColumnKey; label: string }[] = [
   { key: "LEAD", label: "Lead" },
   { key: "CONTACTED", label: "Contacted" },
+  { key: "QUESTIONNAIRE_SENT", label: "Questionnaire Sent" },
+  { key: "QUESTIONNAIRE_DONE", label: "Questionnaire Done" },
   { key: "PORTAL_SENT", label: "Portal Sent" },
   { key: "TEMPLATE_SELECTED", label: "Template & Plan" },
   { key: "INVOICE_SENT", label: "Invoice" },
@@ -95,6 +110,10 @@ export function boardColumnKey(status: ClientStatus): BoardColumnKey {
     case "CONTACTED":
     case "INTERESTED":
       return "CONTACTED";
+    case "QUESTIONNAIRE_SENT":
+      return "QUESTIONNAIRE_SENT";
+    case "QUESTIONNAIRE_DONE":
+      return "QUESTIONNAIRE_DONE";
     case "PORTAL_SENT":
     case "VIEWED":
       return "PORTAL_SENT";
@@ -120,19 +139,23 @@ export function pipelineStepIndex(status: ClientStatus): number {
     case "CONTACTED":
     case "INTERESTED":
       return 1;
+    case "QUESTIONNAIRE_SENT":
+      return 2;
+    case "QUESTIONNAIRE_DONE":
+      return 3;
     case "PORTAL_SENT":
     case "VIEWED":
-      return 2;
-    case "TEMPLATE_SELECTED":
-      return 3;
-    case "INVOICE_SENT":
       return 4;
-    case "BUILDING":
+    case "TEMPLATE_SELECTED":
       return 5;
-    case "DELIVERED":
+    case "INVOICE_SENT":
       return 6;
-    case "WON":
+    case "BUILDING":
       return 7;
+    case "DELIVERED":
+      return 8;
+    case "WON":
+      return 9;
     case "LOST":
       return 0;
   }

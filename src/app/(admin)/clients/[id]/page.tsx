@@ -4,6 +4,7 @@ import { Link2, Plus, PartyPopper } from "lucide-react";
 import { db } from "@/lib/db";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ClientContactSection } from "@/components/admin/client-contact-section";
+import { DesignQuestionnaireSection } from "@/components/admin/design-questionnaire-section";
 import { DeleteClientButton } from "@/components/admin/delete-client-button";
 import { PortalSummary } from "@/components/admin/portal-summary";
 import { ClientStepper } from "@/components/admin/client-stepper";
@@ -29,6 +30,7 @@ export default async function ClientDetailPage({
   const client = await db.client.findUnique({
     where: { id },
     include: {
+      questionnaire: true,
       portals: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -46,6 +48,9 @@ export default async function ClientDetailPage({
 
   const portal = client.portals[0] ?? null;
   const portalUrl = portal ? await getAbsoluteUrl(`/p/${portal.token}`) : null;
+  const questionnaireFormUrl = client.questionnaire
+    ? await getAbsoluteUrl(`/q/${client.questionnaire.token}`)
+    : null;
   const reviewUrl =
     portal?.delivery?.reviewToken ? await getAbsoluteUrl(`/r/${portal.delivery.reviewToken}`) : null;
   const latestInvoice = portal?.invoices[0] ?? null;
@@ -123,6 +128,12 @@ export default async function ClientDetailPage({
             estimatedValue: client.estimatedValue?.toString() ?? "",
             notes: client.notes ?? "",
           }}
+        />
+
+        <DesignQuestionnaireSection
+          clientId={client.id}
+          questionnaire={client.questionnaire}
+          formUrl={questionnaireFormUrl}
         />
 
         {portal && portalUrl ? (

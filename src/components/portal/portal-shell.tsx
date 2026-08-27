@@ -12,10 +12,14 @@ import Image from "next/image";
 export function PortalShell({
   clientName,
   message,
+  eyebrow = "A website, made for you",
   children,
 }: {
   clientName: string;
   message: string | null;
+  /** Small uppercase label above the client name — defaults to the
+   * template-selection portal's copy; the questionnaire page overrides it. */
+  eyebrow?: string;
   children: React.ReactNode;
 }) {
   return (
@@ -33,7 +37,7 @@ export function PortalShell({
           />
 
           <p className="mt-8 text-xs font-bold uppercase tracking-[0.2em] text-primary">
-            A website, made for you
+            {eyebrow}
           </p>
           <h1 className="mt-2.5 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
             {clientName}

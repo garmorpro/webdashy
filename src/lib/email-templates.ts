@@ -311,6 +311,111 @@ export function renderPasswordResetEmail({
 </html>`;
 }
 
+/** Client-facing — the link to fill out the Design Questionnaire. */
+export function renderQuestionnaireEmail({
+  contactName,
+  businessName,
+  formUrl,
+}: {
+  contactName: string;
+  businessName: string;
+  formUrl: string;
+}): string {
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background-color:#f8fafc;font-family:Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:12px;border:1px solid #e2e8f0;">
+            <tr>
+              <td style="background-color:#1b2951;padding:28px 32px;text-align:center;border-radius:12px 12px 0 0;">
+                <img src="cid:wordmark" alt="WebDashy" width="150" style="display:block;margin:0 auto;height:auto;border:0;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px 0;text-align:center;">
+                <span style="display:inline-block;width:56px;height:56px;line-height:56px;border-radius:50%;background-color:#f0ffdf;font-size:26px;">📝</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 0;text-align:center;">
+                <h1 style="margin:0;font-size:20px;line-height:1.3;color:#1b2951;font-weight:700;">Let's design your new website</h1>
+                <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#475569;">Hi ${escapeHtml(contactName)}, before we get started on ${escapeHtml(businessName)}'s new site, I'd love to learn more about your business, goals, and style. It takes about 15–20 minutes, and you can save your progress and come back any time.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px 8px;text-align:center;">
+                <a href="${formUrl}" style="display:inline-block;background-color:#a4ff4f;color:#1b2951;font-weight:700;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px;">Start the Questionnaire →</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:16px 32px 0;text-align:center;">
+                <p style="margin:0;font-size:13px;color:#94a3b8;">This link is unique to you — once you submit, it'll show your submission status instead. Need to change something after submitting? Just reply or email garrett@webdashy.com.</p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 32px;text-align:center;border-top:1px solid #f1f5f9;margin-top:8px;">
+                <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;">You're receiving this because you're working with WebDashy on a new website.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+/** Admin-facing — notifies the admin a client submitted their questionnaire. */
+export function renderQuestionnaireSubmittedEmail({
+  clientName,
+  clientAdminUrl,
+}: {
+  clientName: string;
+  clientAdminUrl: string;
+}): string {
+  return `<!DOCTYPE html>
+<html>
+  <body style="margin:0;padding:0;background-color:#f8fafc;font-family:Helvetica,Arial,sans-serif;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background-color:#ffffff;border-radius:12px;border:1px solid #e2e8f0;">
+            <tr>
+              <td style="background-color:#1b2951;padding:28px 32px;text-align:center;border-radius:12px 12px 0 0;">
+                <img src="cid:wordmark" alt="WebDashy" width="150" style="display:block;margin:0 auto;height:auto;border:0;" />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:36px 32px 0;text-align:center;">
+                <span style="display:inline-block;width:56px;height:56px;line-height:56px;border-radius:50%;background-color:#f0ffdf;font-size:26px;">✅</span>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 0;text-align:center;">
+                <p style="margin:0;font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#64748b;">Design Questionnaire Submitted</p>
+                <h1 style="margin:8px 0 0;font-size:22px;line-height:1.3;color:#1b2951;font-weight:700;">${escapeHtml(clientName)}</h1>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:28px 32px 8px;text-align:center;">
+                <a href="${clientAdminUrl}" style="display:inline-block;background-color:#a4ff4f;color:#1b2951;font-weight:700;font-size:14px;text-decoration:none;padding:12px 28px;border-radius:8px;">View Responses →</a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 32px;text-align:center;border-top:1px solid #f1f5f9;margin-top:8px;">
+                <p style="margin:20px 0 0;font-size:12px;color:#94a3b8;">You're receiving this because a client submitted their Design Questionnaire on your WebDashy portal.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
 function escapeHtml(input: string): string {
   return input
     .replace(/&/g, "&amp;")
