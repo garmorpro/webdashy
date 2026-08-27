@@ -28,6 +28,17 @@ const styles = StyleSheet.create({
   kicker: { fontSize: 8, fontFamily: "Helvetica-Bold", color: "#4c6b1f", letterSpacing: 1.5, marginTop: 22 },
   title: { fontSize: 20, fontFamily: "Helvetica-Bold", color: NAVY, marginTop: 4 },
   meta: { fontSize: 9, color: MUTED, marginTop: 4 },
+  timelineBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f3f5fb",
+    borderRadius: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    marginTop: 16,
+  },
+  timelineLabel: { fontSize: 7.5, fontFamily: "Helvetica-Bold", color: MUTED, letterSpacing: 0.5, marginRight: 8 },
+  timelineValue: { fontSize: 10, fontFamily: "Helvetica-Bold", color: NAVY },
   divider: { height: 1, backgroundColor: LINE, marginTop: 18, marginBottom: 4 },
   sectionWrap: { marginTop: 22 },
   sectionTitle: { fontSize: 8, fontFamily: "Helvetica-Bold", color: FAINT, letterSpacing: 1, marginBottom: 10 },
@@ -53,6 +64,11 @@ const dateFmt = new Intl.DateTimeFormat("en-US", { dateStyle: "long" });
 
 function QuestionnaireDocument({ data }: { data: QuestionnairePdfData }) {
   const logoPath = path.join(process.cwd(), "public/brand/wordmark.png");
+  // Surfaced up top on its own, same reasoning as the dialog's own
+  // timeline callout — references this one field by its exact key rather
+  // than going through the generic type-driven section loop below, since
+  // it's a deliberate one-off highlight, not part of that generic pass.
+  const timeline = data.answers.launchTimeline?.trim();
 
   return (
     <Document title={`${data.businessName} — Design Questionnaire`}>
@@ -62,6 +78,12 @@ function QuestionnaireDocument({ data }: { data: QuestionnairePdfData }) {
         <Text style={styles.kicker}>DESIGN QUESTIONNAIRE</Text>
         <Text style={styles.title}>{data.businessName}</Text>
         <Text style={styles.meta}>Submitted {dateFmt.format(data.submittedAt)}</Text>
+
+        <View style={styles.timelineBox}>
+          <Text style={styles.timelineLabel}>TARGET TIMELINE</Text>
+          <Text style={styles.timelineValue}>{timeline || "Not specified"}</Text>
+        </View>
+
         <View style={styles.divider} />
 
         {QUESTIONNAIRE_SECTIONS.map((section) => {

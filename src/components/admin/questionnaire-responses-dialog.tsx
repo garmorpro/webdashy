@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, X } from "lucide-react";
+import { Calendar, Download, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +52,7 @@ export function QuestionnaireResponsesDialog({
   pdfUrl: string;
 }) {
   const answered = countAnsweredFields(answers);
+  const timeline = answers.launchTimeline?.trim();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -90,6 +91,22 @@ export function QuestionnaireResponsesDialog({
               <X className="h-4 w-4" />
             </Button>
           </div>
+        </div>
+
+        {/* Target timeline — the one answer worth surfacing before anyone
+            has to scroll or click into Project Details for it. Deliberately
+            references the "launchTimeline" field by its exact key rather
+            than going through the generic type-driven section rendering
+            below — this is a one-off highlight of a specific answer, not
+            part of that generic loop. */}
+        <div className="flex shrink-0 items-center gap-2.5 border-b border-border bg-secondary/70 px-7 py-2.5">
+          <Calendar className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+          <span className="text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground">
+            Target Timeline
+          </span>
+          <span className={cn("text-sm font-bold", timeline ? "text-foreground" : "italic text-muted-foreground/60")}>
+            {timeline || "Not specified"}
+          </span>
         </div>
 
         <div className="flex min-h-0 flex-1 items-stretch">
