@@ -4,15 +4,9 @@ import { useState, useTransition } from "react";
 import { FileText, Copy, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+import { QuestionnaireResponsesDialog } from "@/components/admin/questionnaire-responses-dialog";
 import { sendQuestionnaire } from "@/lib/actions/questionnaire";
-import { QUESTIONNAIRE_SECTIONS, countAnsweredFields, TOTAL_QUESTIONNAIRE_FIELDS } from "@/lib/questionnaire-schema";
+import { countAnsweredFields, TOTAL_QUESTIONNAIRE_FIELDS } from "@/lib/questionnaire-schema";
 import type { QuestionnaireAnswers } from "@/lib/questionnaire-schema";
 import type { QuestionnaireStatus } from "@prisma/client";
 
@@ -25,11 +19,14 @@ function toAnswers(json: unknown): QuestionnaireAnswers {
 
 export function DesignQuestionnaireSection({
   clientId,
+  businessName,
   questionnaire,
   formUrl,
 }: {
   clientId: string;
+  businessName: string;
   questionnaire: {
+    id: string;
     status: QuestionnaireStatus;
     sentAt: Date;
     submittedAt: Date | null;
@@ -110,36 +107,14 @@ export function DesignQuestionnaireSection({
           </div>
         </div>
 
-        <Dialog open={responsesOpen} onOpenChange={setResponsesOpen}>
-          <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto sm:max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Design Questionnaire Responses</DialogTitle>
-              <DialogDescription>
-                Submitted {questionnaire.submittedAt ? dateFormatter.format(questionnaire.submittedAt) : ""}
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="flex flex-col gap-6">
-              {QUESTIONNAIRE_SECTIONS.map((section) => (
-                <div key={section.id}>
-                  <h3 className="mb-2.5 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">
-                    {section.title}
-                  </h3>
-                  <div className="flex flex-col gap-3.5 rounded-xl bg-secondary p-4">
-                    {section.fields.map((field) => (
-                      <div key={field.key}>
-                        <div className="text-xs font-bold text-foreground">{field.label}</div>
-                        <div className="mt-0.5 whitespace-pre-wrap text-sm text-muted-foreground">
-                          {answers[field.key]?.trim() || "—"}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
+        <QuestionnaireResponsesDialog
+          open={responsesOpen}
+          onOpenChange={setResponsesOpen}
+          businessName={businessName}
+          submittedAt={questionnaire.submittedAt}
+          answers={answers}
+          pdfUrl={`/api/questionnaire/${questionnaire.id}/pdf`}
+        />
       </>
     );
   }

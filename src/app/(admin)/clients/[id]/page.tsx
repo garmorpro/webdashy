@@ -138,6 +138,7 @@ export default async function ClientDetailPage({
 
         <DesignQuestionnaireSection
           clientId={client.id}
+          businessName={client.businessName}
           questionnaire={client.questionnaire}
           formUrl={questionnaireFormUrl}
         />

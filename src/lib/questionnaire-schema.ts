@@ -28,6 +28,21 @@ export interface QuestionnaireSection {
   fields: QuestionnaireField[];
 }
 
+/**
+ * Display formatting for a raw stored answer — currently only matters for
+ * "yesno" fields, whose raw value is the lowercase "yes"/"no" the wizard's
+ * toggle buttons write (see questionnaire-wizard.tsx). Used by both the
+ * admin responses dialog and the PDF export so they never drift — e.g. a
+ * capitalization fix here doesn't need to be made twice.
+ */
+export function formatFieldValue(field: QuestionnaireField, value: string): string {
+  if (field.type === "yesno") {
+    if (value === "yes") return "Yes";
+    if (value === "no") return "No";
+  }
+  return value;
+}
+
 export type QuestionnaireAnswers = Record<string, string>;
 
 export const QUESTIONNAIRE_INTRO =
