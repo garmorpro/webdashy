@@ -11,10 +11,11 @@ import { ClientStepper } from "@/components/admin/client-stepper";
 import { RequirementsSection } from "@/components/admin/requirements-section";
 import { InvoiceSection } from "@/components/admin/invoice-section";
 import { DeliverySection } from "@/components/admin/delivery-section";
+import { SectionLocked } from "@/components/admin/section-locked";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { updateClient } from "@/lib/actions/clients";
-import { CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLES } from "@/lib/client-status";
+import { CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLES, pipelineStepIndex } from "@/lib/client-status";
 import { avatarColorsFor, initialsFor } from "@/lib/avatar-colors";
 import { getAbsoluteUrl } from "@/lib/site-url";
 
@@ -58,6 +59,11 @@ export default async function ClientDetailPage({
   const requirementsLocked = !portal?.selection;
   const invoiceLocked = !portal?.requirements;
   const deliveryLocked = latestInvoice?.status !== "PAID";
+  // A portal can't be created until the client's finished the Design
+  // Questionnaire — an already-created portal (or a client who reached
+  // this stage before the questionnaire feature existed) stays fully
+  // visible regardless, this only gates *creating* a new one.
+  const portalLocked = pipelineStepIndex(client.status) < pipelineStepIndex("QUESTIONNAIRE_DONE");
 
   const boundUpdate = updateClient.bind(null, client.id);
 
@@ -174,6 +180,12 @@ export default async function ClientDetailPage({
               locked={deliveryLocked}
             />
           </>
+        ) : portalLocked ? (
+          <SectionLocked
+            title="Template Portal"
+            icon={Link2}
+            reason="Available once the Design Questionnaire is submitted."
+          />
         ) : (
           <div className="max-w-2xl">
             <EmptyState
