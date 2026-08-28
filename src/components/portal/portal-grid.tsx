@@ -145,25 +145,44 @@ export function PortalGrid({
         </div>
       ) : null}
 
-      {cardPlans.length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {cardPlans.map((plan) => (
-            <PortalPlanCard
-              key={plan.id}
-              plan={plan}
-              selected={plan.id === planId}
-              showPricing={showPricing}
-              onSelect={() => setPlanId(plan.id)}
-            />
-          ))}
+      {cardPlans.length === 1 && bundlePlan ? (
+        // A tab that's just one bundle plan (the common shape — e.g. a
+        // "Website + Reviews" tab) gets the plan card and its "Why bundle?"
+        // panel side by side, matching how a bundle should be pitched:
+        // the offer on one side, the case for it on the other.
+        <div className="mx-auto grid max-w-4xl grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+          <PortalPlanCard
+            plan={cardPlans[0]}
+            selected={cardPlans[0].id === planId}
+            showPricing={showPricing}
+            onSelect={() => setPlanId(cardPlans[0].id)}
+          />
+          <BundleSavingsPanel bundle={bundlePlan} />
         </div>
+      ) : cardPlans.length > 0 ? (
+        <>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {cardPlans.map((plan) => (
+              <PortalPlanCard
+                key={plan.id}
+                plan={plan}
+                selected={plan.id === planId}
+                showPricing={showPricing}
+                onSelect={() => setPlanId(plan.id)}
+              />
+            ))}
+          </div>
+          {bundlePlan ? (
+            <div className="mx-auto mt-8 max-w-2xl">
+              <BundleSavingsPanel bundle={bundlePlan} />
+            </div>
+          ) : null}
+        </>
       ) : (
         <p className="text-center text-sm text-slate-400">
           No plans are available yet — reach out and we&apos;ll get you a quote.
         </p>
       )}
-
-      {bundlePlan ? <BundleSavingsPanel bundle={bundlePlan} /> : null}
 
       {showPricing && oneTimePlans.length > 0 ? (
         <div className="mt-6 text-center">

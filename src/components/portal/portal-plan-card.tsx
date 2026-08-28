@@ -17,15 +17,18 @@ export function PortalPlanCard({
 }) {
   // Either badge gets the same bold, inverted card treatment — a featured
   // plan should read as visually distinct at a glance, not just carry a
-  // small label a visitor might skim past.
-  const featured = plan.isPopular || plan.isRecommended;
+  // small label a visitor might skim past. A bundle plan always gets this
+  // treatment too, independent of Most Popular/Recommended — it's the
+  // premium tier next to a "Why bundle?" panel, so it should never read as
+  // just another plain card.
+  const featured = plan.isPopular || plan.isRecommended || plan.isBundle;
 
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cn(
-        "relative flex w-full flex-col rounded-2xl border-2 p-6 text-left shadow-sm transition-shadow hover:shadow-lg",
+        "relative flex h-full w-full flex-col rounded-2xl border-2 p-6 text-left shadow-sm transition-shadow hover:shadow-lg",
         featured ? "border-transparent bg-[#1b2951]" : "bg-white",
         selected && !featured ? "border-lime-400 ring-4 ring-lime-400/30" : null,
         selected && featured ? "ring-4 ring-lime-400/40" : null,
@@ -132,6 +135,8 @@ export function PortalPlanCard({
             <Check className="h-4 w-4" />
             Selected
           </>
+        ) : plan.isBundle ? (
+          "Get the Bundle"
         ) : (
           `Choose ${plan.name}`
         )}
