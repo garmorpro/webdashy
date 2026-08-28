@@ -36,8 +36,12 @@ export function ConfirmActionDialog({
   confirmLabel: string;
   pendingLabel?: string;
   destructive?: boolean;
-  /** Should redirect on success (thrown redirects are handled), or throw
-   * an Error with a user-facing message on failure. */
+  /** Either redirect on success (thrown redirects are handled and left to
+   * propagate — the dialog unmounts with the navigation, so this dialog's
+   * own auto-close below never gets a chance to run, which is fine), or
+   * throw an Error with a user-facing message on failure. Anything else
+   * (a resolved promise, no throw) is treated as success and this dialog
+   * closes itself — the caller does not need to separately close it. */
   onConfirm: () => Promise<void>;
 }) {
   const [pending, startTransition] = useTransition();
@@ -60,6 +64,14 @@ export function ConfirmActionDialog({
               startTransition(async () => {
                 try {
                   await onConfirm();
+                  // A non-redirecting onConfirm resolves normally on
+                  // success (e.g. resetPortalSelection, deletePlan just
+                  // revalidate in place, they don't navigate away) — close
+                  // the dialog here so it doesn't sit open after a
+                  // successful action. A redirecting onConfirm throws
+                  // before reaching this line, so it never double-closes
+                  // on top of the navigation.
+                  onOpenChange(false);
                 } catch (err) {
                   // A successful action may redirect, which Next.js
                   // implements by throwing an error whose `digest` is
