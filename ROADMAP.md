@@ -60,7 +60,7 @@ Inside the client record:
 
 - Real data — `src/app/(admin)/page.tsx` + `dashboard-view.tsx`. Metrics ended up as: total templates, active clients, pipeline value, won this month (the original "templates shared / portal views / selections" trio depended on `PortalEvent` tracking, which is still unwritten everywhere — see the Phase 6 note above; the metrics actually shown here reuse data that's genuinely populated instead).
 - Recent activity feed — merges real `TemplateSelection`/`Invoice`/`Delivery` events (not `PortalEvent`, for the same reason), sorted by timestamp.
-- Pipeline breakdown (Lead / Portal Sent / Invoice / Won counts) reusing the same `boardColumnKey()` grouping as the Clients board view.
+- Pipeline breakdown (Lead / Portal Sent / Invoice / Won counts) via `boardColumnKey()` (`client-status.ts`) — also reused by the Clients page's own stat strip (active pipeline count/value, won this month). The Clients page had a Table/Board (Kanban) toggle for a while; the Board view was later dropped in favor of the stat strip, but `boardColumnKey()`/`BOARD_COLUMNS` stayed since the Dashboard still depends on them.
 
 ## Phase 8 — Polish
 

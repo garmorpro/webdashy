@@ -176,7 +176,7 @@ A client's `status` reaches `WON` once **both** halves of the final "Complete" s
 
 ## 7. Portal Tracking
 
-Tracking is intentionally lightweight (see spec §18). Each meaningful client-side action against a portal writes a `PortalEvent` row and updates denormalized counters/timestamps on `Portal` (`viewCount`, `firstViewedAt`, `lastViewedAt`) for fast dashboard/list reads without aggregating events on every page load.
+Tracking is intentionally lightweight (see spec §18): the `PortalEvent` table (`PORTAL_VIEWED`/`TEMPLATE_PREVIEWED`/`TEMPLATE_SELECTED`) is modeled but nothing writes to it — the Dashboard's activity feed deliberately merges real `TemplateSelection`/`Invoice`/`Delivery` events instead, for exactly that reason. What IS live: `/p/[token]/page.tsx` updates `Portal`'s denormalized counters on every real load — `viewCount` (increments), `firstViewedAt`/`lastViewedAt`, and `status` (`ACTIVE` → `VIEWED`, forward-only) — plus advances `Client.status` to `VIEWED` the same forward-only way every other pipeline milestone does. This was itself a gap for a while (the fields existed, nothing wrote to them) until a user question ("how can you tell if it's been viewed yet?") caught it — worth remembering that a schema field or table being modeled and read on the UI side is not proof anything writes to it; grep for the actual write before trusting a stat/counter works.
 
 ---
 
