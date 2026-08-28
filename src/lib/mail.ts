@@ -8,6 +8,7 @@ import {
   renderPasswordResetEmail,
   renderQuestionnaireEmail,
   renderQuestionnaireSubmittedEmail,
+  renderPortalEmail,
 } from "@/lib/email-templates";
 
 let transporter: nodemailer.Transporter | null | undefined;
@@ -286,6 +287,41 @@ export async function sendQuestionnaireEmail({
     from: `WebDashy <${getFromAddress()}>`,
     to,
     subject: "Let's design your new website — a quick questionnaire",
+    text,
+    html,
+    attachments: [WORDMARK_ATTACHMENT],
+  });
+}
+
+/**
+ * Emails the client their unique Template Portal link. Not best-effort —
+ * same reasoning as sendInvoiceEmail/sendQuestionnaireEmail: the admin
+ * action that triggers this ("Create Portal" / "Resend") needs to know
+ * whether the client actually received it.
+ */
+export async function sendPortalEmail({
+  to,
+  contactName,
+  businessName,
+  portalUrl,
+  message,
+}: {
+  to: string;
+  contactName: string;
+  businessName: string;
+  portalUrl: string;
+  message: string | null;
+}): Promise<void> {
+  const t = getTransporter();
+  if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
+
+  const html = renderPortalEmail({ contactName, businessName, portalUrl, message });
+  const text = `Hi ${contactName}, take a look at the template options for ${businessName}'s new site and pick your favorite: ${portalUrl}`;
+
+  await t.sendMail({
+    from: `WebDashy <${getFromAddress()}>`,
+    to,
+    subject: "Choose a template for your new website",
     text,
     html,
     attachments: [WORDMARK_ATTACHMENT],

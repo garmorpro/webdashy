@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { generatePortalToken } from "@/lib/tokens";
+import { getAbsoluteUrl } from "@/lib/site-url";
+import { sendPortalEmail } from "@/lib/mail";
+import { pipelineStepIndex } from "@/lib/client-status";
 
 export type PortalActionState = { error?: string };
 
@@ -76,8 +79,48 @@ export async function createPortal(
     return { error: "Something went wrong creating the portal. Please try again." };
   }
 
+  try {
+    const portalUrl = await getAbsoluteUrl(`/p/${token}`);
+    await sendPortalEmail({
+      to: client.email,
+      contactName: client.contactName,
+      businessName: client.businessName,
+      portalUrl,
+      message,
+    });
+  } catch (err) {
+    console.error("Portal created but email failed to send:", err);
+    // The portal record is real either way — surface this so the admin
+    // knows to resend rather than assuming the client has the link.
+    return { error: "Portal created, but the email couldn't be sent. Use Resend from the client page." };
+  }
+
+  if (pipelineStepIndex("PORTAL_SENT") > pipelineStepIndex(client.status)) {
+    await db.client.update({ where: { id: clientId }, data: { status: "PORTAL_SENT" } });
+  }
+
   revalidatePath(`/clients/${clientId}`);
   redirect(`/clients/${clientId}`);
+}
+
+/** Re-sends the existing portal link — e.g. after createPortal's email failed, or on request. */
+export async function resendPortalEmail(portalId: string, clientId: string) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
+  const portal = await db.portal.findUnique({ where: { id: portalId }, include: { client: true } });
+  if (!portal) throw new Error("Portal not found.");
+
+  const portalUrl = await getAbsoluteUrl(`/p/${portal.token}`);
+  await sendPortalEmail({
+    to: portal.client.email,
+    contactName: portal.client.contactName,
+    businessName: portal.client.businessName,
+    portalUrl,
+    message: portal.message,
+  });
+
+  revalidatePath(`/clients/${clientId}`);
 }
 
 export async function updatePortalTemplates(

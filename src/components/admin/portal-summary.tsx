@@ -2,12 +2,12 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Copy, ExternalLink, Eye, Ban, CheckCircle2, Pencil, Link2 } from "lucide-react";
+import { Copy, ExternalLink, Eye, Ban, CheckCircle2, Pencil, Link2, Send } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
-import { setPortalDisabled, resetPortalSelection } from "@/lib/actions/portals";
+import { setPortalDisabled, resetPortalSelection, resendPortalEmail } from "@/lib/actions/portals";
 import { PORTAL_STATUS_LABELS, PORTAL_STATUS_STYLES } from "@/lib/portal-status";
 import type { PortalStatus } from "@prisma/client";
 
@@ -55,6 +55,17 @@ export function PortalSummary({
         toast.success(isDisabled ? "Portal re-enabled" : "Portal disabled");
       } catch {
         toast.error("Couldn't update the portal. Please try again.");
+      }
+    });
+  }
+
+  function resendEmail() {
+    startTransition(async () => {
+      try {
+        await resendPortalEmail(portalId, clientId);
+        toast.success("Portal link resent.");
+      } catch {
+        toast.error("Couldn't resend the email. Please try again.");
       }
     });
   }
@@ -201,6 +212,11 @@ export function PortalSummary({
               Disable Portal
             </>
           )}
+        </Button>
+
+        <Button variant="outline" size="sm" disabled={isPending} onClick={resendEmail}>
+          <Send className="h-3.5 w-3.5" />
+          Resend Email
         </Button>
       </div>
     </div>
