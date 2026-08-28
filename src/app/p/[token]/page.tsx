@@ -6,6 +6,7 @@ import { PortalShell } from "@/components/portal/portal-shell";
 import { PortalGrid } from "@/components/portal/portal-grid";
 import { PortalSuccess } from "@/components/portal/portal-success";
 import { PortalUnavailable } from "@/components/portal/portal-unavailable";
+import { pipelineStepIndex } from "@/lib/client-status";
 
 // Always resolved per-request against live data — a client's selection
 // must never be served from a stale cache. Also can't be statically
@@ -54,6 +55,29 @@ export default async function PublicPortalPage({
 
   if (!portal) notFound();
   if (portal.status === "DISABLED") return <PortalUnavailable />;
+
+  // Record this as a real view — every load of this page happens via the
+  // client's own unique, unguessable link (see ARCHITECTURE.md §6), so
+  // there's no separate "admin preview" case to exclude. Forward-only
+  // status bump (ACTIVE -> VIEWED) — never downgrades a portal that's
+  // already SELECTED. Best-effort: a failure here must never stop the
+  // client from actually seeing their templates.
+  try {
+    await db.portal.update({
+      where: { id: portal.id },
+      data: {
+        viewCount: { increment: 1 },
+        firstViewedAt: portal.firstViewedAt ?? new Date(),
+        lastViewedAt: new Date(),
+        status: portal.status === "ACTIVE" ? "VIEWED" : portal.status,
+      },
+    });
+    if (pipelineStepIndex("VIEWED") > pipelineStepIndex(portal.client.status)) {
+      await db.client.update({ where: { id: portal.clientId }, data: { status: "VIEWED" } });
+    }
+  } catch (err) {
+    console.error("Failed to record portal view:", err);
+  }
 
   const plans = portal.selection
     ? []
