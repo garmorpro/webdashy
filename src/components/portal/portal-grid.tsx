@@ -2,9 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Check } from "lucide-react";
+import { Eye } from "lucide-react";
 import { PortalTemplateCard } from "@/components/portal/portal-template-card";
 import { PortalPlanCard } from "@/components/portal/portal-plan-card";
+import { BundleSavingsPanel } from "@/components/portal/bundle-savings-panel";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,7 +19,7 @@ import { confirmPortalSelection } from "@/lib/actions/public-portal";
 import { cn } from "@/lib/utils";
 import type { Category, Template, Plan, PlanCategory } from "@prisma/client";
 
-type PlanWithCategory = Plan & { category: PlanCategory | null };
+type PlanWithCategory = Plan & { category: PlanCategory | null; bundleComponents: Plan[] };
 
 // Sentinel for the synthesized tab that groups any plan with no category
 // assigned yet — never a real PlanCategory id, so it can't collide.
@@ -68,6 +69,10 @@ export function PortalGrid({
   // active tab — switching tabs browses a different product line's plans.
   const cardPlans = tabPlans.filter((p) => p.billingType === "MONTHLY");
   const oneTimePlans = tabPlans.filter((p) => p.billingType === "ONE_TIME");
+  // A bundle is any plan on this tab that lists other plans as its
+  // components (Plan.bundleComponents) — drives the "Why bundle?" panel
+  // below the grid. Money math only makes sense when pricing is shown.
+  const bundlePlan = showPricing ? tabPlans.find((p) => p.bundleComponents.length > 0) : undefined;
 
   const selectedTemplate = templates.find((t) => t.id === templateId) ?? null;
   // Looks up the FULL plans list (not tabPlans) — a selection made under one
@@ -158,6 +163,8 @@ export function PortalGrid({
         </p>
       )}
 
+      {bundlePlan ? <BundleSavingsPanel bundle={bundlePlan} /> : null}
+
       {showPricing && oneTimePlans.length > 0 ? (
         <div className="mt-6 text-center">
           <button
@@ -174,42 +181,44 @@ export function PortalGrid({
 
       <div
         className={cn(
-          "sticky bottom-4 mt-10 flex flex-col items-center gap-4 rounded-2xl bg-gradient-to-r from-[#1b2951] to-[#26315e] px-6 py-5 text-center shadow-2xl transition-shadow sm:flex-row sm:justify-between sm:text-left",
+          "sticky bottom-4 mt-10 flex items-stretch overflow-hidden rounded-2xl bg-gradient-to-r from-[#1b2951] to-[#26315e] shadow-2xl transition-shadow",
           canConfirm ? "ring-2 ring-lime-400/60" : "ring-1 ring-white/10"
         )}
       >
-        <div className="flex items-center gap-3">
-          <span
-            className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-              canConfirm ? "bg-lime-400" : "bg-white/10"
-            )}
-          >
-            <Check className={cn("h-4.5 w-4.5", canConfirm ? "text-[#1b2951]" : "text-white/40")} />
-          </span>
-          <p className="text-sm text-slate-300">
-            {selectedTemplate || selectedPlan ? (
-              <>
-                Selected:{" "}
-                <span className="font-semibold text-white">
-                  {selectedTemplate?.name ?? "no template yet"}
-                </span>{" "}
-                template ·{" "}
-                <span className="font-semibold text-white">
-                  {selectedPlan
-                    ? `${selectedPlan.name} (${selectedPlan.billingType === "MONTHLY" ? "Monthly" : "One-Time"})`
-                    : "no plan yet"}
-                </span>{" "}
-                plan
-              </>
-            ) : (
-              "Pick a template and a plan to continue."
-            )}
-          </p>
+        <div className="w-1.5 shrink-0 bg-lime-400" />
+        <div className="flex flex-1 flex-col items-center justify-between gap-4 px-6 py-5 sm:flex-row">
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-7">
+            <div className="text-center sm:text-left">
+              <div className="text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+                Template
+              </div>
+              <div className="text-[15px] font-bold text-white">
+                {selectedTemplate?.name ?? "—"}
+              </div>
+            </div>
+            <div className="hidden h-8 w-px bg-white/15 sm:block" />
+            <div className="text-center sm:text-left">
+              <div className="text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+                Plan
+              </div>
+              <div className="text-[15px] font-bold text-white">
+                {selectedPlan ? (
+                  <>
+                    {selectedPlan.name}{" "}
+                    <span className="font-semibold text-slate-400">
+                      ({selectedPlan.billingType === "MONTHLY" ? "Monthly" : "One-Time"})
+                    </span>
+                  </>
+                ) : (
+                  "—"
+                )}
+              </div>
+            </div>
+          </div>
+          <Button disabled={!canConfirm} onClick={() => setConfirmOpen(true)} className="shrink-0">
+            Confirm Selection
+          </Button>
         </div>
-        <Button disabled={!canConfirm} onClick={() => setConfirmOpen(true)} className="shrink-0">
-          Confirm Selection
-        </Button>
       </div>
 
       <Dialog

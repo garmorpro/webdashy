@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import type { Plan, PlanBillingType, PlanCategory } from "@prisma/client";
 
 type FormTarget = Plan | "new-monthly" | "new-onetime" | null;
-type PlanWithCategory = Plan & { category: PlanCategory | null };
+type PlanWithCategory = Plan & { category: PlanCategory | null; bundleComponents: Plan[] };
 
 function PlanCard({
   plan,
@@ -283,6 +283,7 @@ export function PlansManager({
         onOpenChange={(open) => !open && setFormTarget(null)}
         plan={editingPlan}
         categories={categories}
+        allPlans={plans}
         defaultBillingType={defaultBillingType}
       />
 

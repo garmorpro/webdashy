@@ -82,13 +82,18 @@ export function PlanFormDialog({
   onOpenChange,
   plan,
   categories,
+  allPlans,
   defaultBillingType = "MONTHLY",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** null = creating a new plan; a Plan = editing that one. */
-  plan: Plan | null;
+  plan: (Plan & { bundleComponents?: Plan[] }) | null;
   categories: PlanCategory[];
+  /** Every plan, for the "Bundle includes" picker — the plan being edited
+   * (if any) is filtered out of the list itself, a plan can't bundle
+   * itself. */
+  allPlans: Plan[];
   /** Only used when plan is null (creating) — lets the "Plans" section's Add
    * button default to Monthly and the "One-Time Options" section's default
    * to One-time, matching whichever list the admin clicked "Add" from.
@@ -105,6 +110,16 @@ export function PlanFormDialog({
     plan?.billingType ?? defaultBillingType
   );
   const [categoryId, setCategoryId] = useState(plan?.categoryId ?? NO_CATEGORY);
+  const [bundleComponentIds, setBundleComponentIds] = useState<string[]>(
+    plan?.bundleComponents?.map((p) => p.id) ?? []
+  );
+  const bundlePickerOptions = allPlans.filter((p) => p.id !== plan?.id);
+
+  function toggleBundleComponent(id: string) {
+    setBundleComponentIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
@@ -166,6 +181,38 @@ export function PlanFormDialog({
               Which tab this plan shows under on the client portal.
             </p>
           </div>
+
+          {bundlePickerOptions.length > 0 ? (
+            <div className="space-y-1.5">
+              <Label>Bundle includes</Label>
+              <div className="flex max-h-36 flex-col gap-1 overflow-y-auto rounded-xl border border-border p-2">
+                {bundlePickerOptions.map((p) => (
+                  <label
+                    key={p.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-secondary"
+                  >
+                    <input
+                      type="checkbox"
+                      name="bundleComponentIds"
+                      value={p.id}
+                      checked={bundleComponentIds.includes(p.id)}
+                      onChange={() => toggleBundleComponent(p.id)}
+                      className="h-4 w-4 rounded border-border accent-primary"
+                    />
+                    <span className="font-medium text-foreground">{p.name}</span>
+                    <span className="text-xs text-muted-foreground">
+                      ${Number(p.price).toLocaleString()}
+                      {p.billingType === "MONTHLY" ? "/mo" : " one-time"}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                For a plan that bundles others together — shows a real savings comparison next to
+                this plan on the client portal. Leave empty for a normal plan.
+              </p>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">

@@ -298,7 +298,15 @@ model Plan {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  selections TemplateSelection[]
+  selections       TemplateSelection[]
+  // Self-relation: which OTHER plans this plan bundles together, purely to
+  // drive the "Why bundle?" savings panel on the portal (real math — sum of
+  // the components' own prices vs. this plan's price — never typed in by
+  // hand). Symmetric by construction (Prisma's implicit self-relation): a
+  // plan set as a component here also gets this plan added to its own
+  // partOfBundles. Doesn't affect selection or pricing, purely informational.
+  bundleComponents Plan[]              @relation("PlanBundleComponents")
+  partOfBundles    Plan[]              @relation("PlanBundleComponents")
 
   @@index([isActive])
   @@index([categoryId])
