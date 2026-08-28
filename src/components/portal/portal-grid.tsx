@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eye } from "lucide-react";
+import { Eye, Check } from "lucide-react";
 import { PortalTemplateCard } from "@/components/portal/portal-template-card";
 import { PortalPlanCard } from "@/components/portal/portal-plan-card";
 import { Button } from "@/components/ui/button";
@@ -166,29 +166,48 @@ export function PortalGrid({
             className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-lime-400 bg-lime-50 px-5 py-2.5 text-sm font-semibold text-lime-800 transition-colors hover:bg-lime-100"
           >
             {selectedPlan?.billingType === "ONE_TIME"
-              ? `Selected: ${selectedPlan.name} (one-time) — change?`
+              ? `Selected: ${selectedPlan.name} (One-Time) — change?`
               : (oneTimeFooterNote?.trim() || "Prefer to pay once? See one-time options →")}
           </button>
         </div>
       ) : null}
 
-      <div className="sticky bottom-4 mt-10 flex flex-col items-center gap-3 rounded-2xl bg-[#26315e] px-6 py-4 text-center shadow-2xl sm:flex-row sm:justify-between sm:text-left">
-        <p className="text-sm text-slate-300">
-          {selectedTemplate || selectedPlan ? (
-            <>
-              Selected:{" "}
-              <span className="font-semibold text-white">
-                {selectedTemplate?.name ?? "no template yet"}
-              </span>{" "}
-              template ·{" "}
-              <span className="font-semibold text-white">{selectedPlan?.name ?? "no plan yet"}</span>{" "}
-              plan
-            </>
-          ) : (
-            "Pick a template and a plan to continue."
-          )}
-        </p>
-        <Button disabled={!canConfirm} onClick={() => setConfirmOpen(true)}>
+      <div
+        className={cn(
+          "sticky bottom-4 mt-10 flex flex-col items-center gap-4 rounded-2xl bg-gradient-to-r from-[#1b2951] to-[#26315e] px-6 py-5 text-center shadow-2xl transition-shadow sm:flex-row sm:justify-between sm:text-left",
+          canConfirm ? "ring-2 ring-lime-400/60" : "ring-1 ring-white/10"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+              canConfirm ? "bg-lime-400" : "bg-white/10"
+            )}
+          >
+            <Check className={cn("h-4.5 w-4.5", canConfirm ? "text-[#1b2951]" : "text-white/40")} />
+          </span>
+          <p className="text-sm text-slate-300">
+            {selectedTemplate || selectedPlan ? (
+              <>
+                Selected:{" "}
+                <span className="font-semibold text-white">
+                  {selectedTemplate?.name ?? "no template yet"}
+                </span>{" "}
+                template ·{" "}
+                <span className="font-semibold text-white">
+                  {selectedPlan
+                    ? `${selectedPlan.name} (${selectedPlan.billingType === "MONTHLY" ? "Monthly" : "One-Time"})`
+                    : "no plan yet"}
+                </span>{" "}
+                plan
+              </>
+            ) : (
+              "Pick a template and a plan to continue."
+            )}
+          </p>
+        </div>
+        <Button disabled={!canConfirm} onClick={() => setConfirmOpen(true)} className="shrink-0">
           Confirm Selection
         </Button>
       </div>
