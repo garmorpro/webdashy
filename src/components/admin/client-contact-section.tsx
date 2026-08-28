@@ -39,7 +39,7 @@ export function ClientContactSection({
   }
 
   return (
-    <div className="max-w-2xl rounded-2xl bg-card p-6">
+    <div className="rounded-2xl bg-card p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-extrabold text-foreground">Contact</h2>
         <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>

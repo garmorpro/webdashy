@@ -108,7 +108,7 @@ export default async function ClientDetailPage({
         <ClientStepper status={client.status} />
       </div>
 
-      <div className="max-w-2xl space-y-6">
+      <div className="space-y-6">
         {client.status === "WON" ? (
           <div className="rounded-xl border border-emerald-500/25 bg-emerald-50 px-6 py-6 text-center">
             <PartyPopper className="mx-auto h-7 w-7 text-emerald-600" />
