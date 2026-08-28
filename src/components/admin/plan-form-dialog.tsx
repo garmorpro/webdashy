@@ -33,6 +33,46 @@ function SubmitButton({ label }: { label: string }) {
   );
 }
 
+/** Matches PortalPricingToggle's exact button+span markup — a plain boolean
+ * switch, submitted via a hidden input since the rest of this form is
+ * native FormData rather than controlled state. */
+function ToggleField({
+  name,
+  label,
+  checked,
+  onChange,
+}: {
+  name: string;
+  label: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl bg-secondary px-4 py-3">
+      <span className="text-sm font-bold text-foreground">{label}</span>
+      <input type="hidden" name={name} value={checked ? "true" : "false"} />
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors",
+          checked ? "bg-primary" : "bg-border"
+        )}
+      >
+        <span
+          className={cn(
+            "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
+            checked ? "translate-x-[18px]" : "translate-x-0.5"
+          )}
+        />
+      </button>
+    </div>
+  );
+}
+
 export function PlanFormDialog({
   open,
   onOpenChange,
@@ -46,6 +86,7 @@ export function PlanFormDialog({
   const action = plan ? updatePlan.bind(null, plan.id) : createPlan;
   const [state, formAction] = useActionState(action, {});
   const [isPopular, setIsPopular] = useState(plan?.isPopular ?? false);
+  const [isRecommended, setIsRecommended] = useState(plan?.isRecommended ?? false);
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
@@ -112,27 +153,19 @@ export function PlanFormDialog({
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 rounded-xl bg-secondary px-4 py-3">
-            <span className="text-sm font-bold text-foreground">Most popular</span>
-            <input type="hidden" name="isPopular" value={isPopular ? "true" : "false"} />
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isPopular}
-              aria-label="Mark as most popular"
-              onClick={() => setIsPopular((v) => !v)}
-              className={cn(
-                "inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors",
-                isPopular ? "bg-primary" : "bg-border"
-              )}
-            >
-              <span
-                className={cn(
-                  "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
-                  isPopular ? "translate-x-[18px]" : "translate-x-0.5"
-                )}
-              />
-            </button>
+          <div className="space-y-2">
+            <ToggleField
+              name="isPopular"
+              label="Most popular"
+              checked={isPopular}
+              onChange={setIsPopular}
+            />
+            <ToggleField
+              name="isRecommended"
+              label="Recommended"
+              checked={isRecommended}
+              onChange={setIsRecommended}
+            />
           </div>
 
           <div className="space-y-1.5">

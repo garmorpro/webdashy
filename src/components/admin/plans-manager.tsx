@@ -89,14 +89,23 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
                 </button>
               </div>
 
-              <Badge
-                variant="secondary"
-                className={
-                  plan.isActive ? "w-fit bg-emerald-50 text-emerald-700" : "w-fit bg-slate-100 text-slate-500"
-                }
-              >
-                {plan.isActive ? "Active" : "Inactive"}
-              </Badge>
+              <div className="flex flex-wrap items-center gap-1.5 pr-10">
+                <Badge
+                  variant="secondary"
+                  className={
+                    plan.isActive
+                      ? "w-fit bg-emerald-50 text-emerald-700"
+                      : "w-fit bg-slate-100 text-slate-500"
+                  }
+                >
+                  {plan.isActive ? "Active" : "Inactive"}
+                </Badge>
+                {plan.isRecommended ? (
+                  <Badge variant="secondary" className="w-fit bg-blue-50 text-blue-700">
+                    Recommended
+                  </Badge>
+                ) : null}
+              </div>
 
               <h3 className="mt-3 text-sm font-extrabold text-foreground">{plan.name}</h3>
               <p className="text-xl font-extrabold text-foreground">

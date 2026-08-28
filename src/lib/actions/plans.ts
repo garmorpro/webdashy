@@ -7,6 +7,10 @@ import type { PlanBillingType } from "@prisma/client";
 
 export type PlanActionState = { error?: string; success?: boolean };
 
+// Keeps the pricing tier list (both here and the client-facing portal grid)
+// from growing unbounded — no cap existed before this.
+const MAX_PLANS = 10;
+
 // See clients.ts for why this check has to live in the action itself —
 // proxy.ts's route-based matcher doesn't cover Server Action dispatch.
 async function requireAdmin(): Promise<string | null> {
@@ -31,6 +35,7 @@ function readPlanFields(formData: FormData) {
     // the raw value — formData is untrusted input (see clients.ts).
     billingType: (billingTypeRaw === "MONTHLY" ? "MONTHLY" : "ONE_TIME") as PlanBillingType,
     isPopular: get("isPopular") === "true",
+    isRecommended: get("isRecommended") === "true",
     tagline: get("tagline") || null,
     features: parseFeatures(get("features")),
   };
@@ -51,6 +56,11 @@ export async function createPlan(
     return { error: "Price must be a positive number." };
   }
 
+  const existingCount = await db.plan.count();
+  if (existingCount >= MAX_PLANS) {
+    return { error: `You can have at most ${MAX_PLANS} plans. Deactivate or delete one first.` };
+  }
+
   try {
     const maxOrder = await db.plan.aggregate({ _max: { displayOrder: true } });
     await db.plan.create({
@@ -59,6 +69,7 @@ export async function createPlan(
         price,
         billingType: fields.billingType,
         isPopular: fields.isPopular,
+        isRecommended: fields.isRecommended,
         tagline: fields.tagline,
         features: fields.features,
         displayOrder: (maxOrder._max.displayOrder ?? -1) + 1,
@@ -98,6 +109,7 @@ export async function updatePlan(
         price,
         billingType: fields.billingType,
         isPopular: fields.isPopular,
+        isRecommended: fields.isRecommended,
         tagline: fields.tagline,
         features: fields.features,
       },

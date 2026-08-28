@@ -258,21 +258,24 @@ enum PlanBillingType {
 }
 
 model Plan {
-  id           String          @id @default(cuid())
-  name         String
-  price        Decimal         @db.Decimal(10, 2)
-  billingType  PlanBillingType @default(ONE_TIME)
-  // Highlights this plan with a "Most Popular" badge on the client portal.
-  // At most one plan is expected to have this on at a time, but it isn't
-  // DB-enforced — admins can toggle more than one, and the UI just shows
-  // the badge on whichever ones are flagged.
-  isPopular    Boolean         @default(false)
-  tagline      String?
-  features     String[]
-  isActive     Boolean         @default(true)
-  displayOrder Int             @default(0)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id            String          @id @default(cuid())
+  name          String
+  price         Decimal         @db.Decimal(10, 2)
+  billingType   PlanBillingType @default(ONE_TIME)
+  // Two independent highlight badges shown on the client portal (and
+  // mirrored on the admin's own plan cards) — isPopular is the bold
+  // top-ribbon "Most Popular" treatment, isRecommended a smaller
+  // top-corner "Recommended" tag. Neither is mutually exclusive with the
+  // other, and neither is DB-enforced to a single plan — admins can flag
+  // more than one, the UI just shows the badge on whichever are flagged.
+  isPopular     Boolean         @default(false)
+  isRecommended Boolean         @default(false)
+  tagline       String?
+  features      String[]
+  isActive      Boolean         @default(true)
+  displayOrder  Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   selections TemplateSelection[]
 

@@ -30,6 +30,12 @@ export function PortalPlanCard({
         </span>
       ) : null}
 
+      {plan.isRecommended ? (
+        <span className="absolute right-3 top-3 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+          Recommended
+        </span>
+      ) : null}
+
       <h3 className="text-base font-semibold text-slate-900">{plan.name}</h3>
 
       {showPricing ? (
