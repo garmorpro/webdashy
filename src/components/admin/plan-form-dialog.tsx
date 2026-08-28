@@ -87,7 +87,11 @@ export function PlanFormDialog({
   const [state, formAction] = useActionState(action, {});
   const [isPopular, setIsPopular] = useState(plan?.isPopular ?? false);
   const [isRecommended, setIsRecommended] = useState(plan?.isRecommended ?? false);
-  const [billingType, setBillingType] = useState<PlanBillingType>(plan?.billingType ?? "ONE_TIME");
+  // Defaults a brand-new plan to Monthly (most plans are) — unrelated to
+  // the schema's own ONE_TIME default, which only exists to keep rows
+  // created before this field existed displaying exactly as they always
+  // did (see the Plan model's own comment).
+  const [billingType, setBillingType] = useState<PlanBillingType>(plan?.billingType ?? "MONTHLY");
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
