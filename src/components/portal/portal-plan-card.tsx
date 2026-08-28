@@ -8,13 +8,11 @@ export function PortalPlanCard({
   plan,
   selected,
   showPricing,
-  featured,
   onSelect,
 }: {
   plan: Plan;
   selected: boolean;
   showPricing: boolean;
-  featured: boolean;
   onSelect: () => void;
 }) {
   return (
@@ -26,7 +24,7 @@ export function PortalPlanCard({
         selected ? "border-lime-400 ring-4 ring-lime-400/30" : "border-slate-200"
       )}
     >
-      {featured ? (
+      {plan.isPopular ? (
         <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#1b2951] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
           Most Popular
         </span>
@@ -37,7 +35,9 @@ export function PortalPlanCard({
       {showPricing ? (
         <p className="mt-1.5 text-2xl font-extrabold text-slate-900">
           ${Number(plan.price).toLocaleString()}
-          <span className="ml-1 text-xs font-semibold text-slate-400">one-time</span>
+          <span className="ml-1 text-xs font-semibold text-slate-400">
+            {plan.billingType === "MONTHLY" ? "/month" : "one-time"}
+          </span>
         </p>
       ) : (
         <p className="mt-2 text-sm font-semibold text-slate-500">Custom quote after selection</p>

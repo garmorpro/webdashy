@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import type { PlanBillingType } from "@prisma/client";
 
 export type PlanActionState = { error?: string; success?: boolean };
 
@@ -22,9 +23,14 @@ function parseFeatures(raw: string): string[] {
 
 function readPlanFields(formData: FormData) {
   const get = (key: string) => String(formData.get(key) ?? "").trim();
+  const billingTypeRaw = get("billingType");
   return {
     name: get("name"),
     priceRaw: get("price"),
+    // Falls back to ONE_TIME on anything unrecognized rather than trusting
+    // the raw value — formData is untrusted input (see clients.ts).
+    billingType: (billingTypeRaw === "MONTHLY" ? "MONTHLY" : "ONE_TIME") as PlanBillingType,
+    isPopular: get("isPopular") === "true",
     tagline: get("tagline") || null,
     features: parseFeatures(get("features")),
   };
@@ -51,6 +57,8 @@ export async function createPlan(
       data: {
         name: fields.name,
         price,
+        billingType: fields.billingType,
+        isPopular: fields.isPopular,
         tagline: fields.tagline,
         features: fields.features,
         displayOrder: (maxOrder._max.displayOrder ?? -1) + 1,
@@ -85,7 +93,14 @@ export async function updatePlan(
   try {
     await db.plan.update({
       where: { id: planId },
-      data: { name: fields.name, price, tagline: fields.tagline, features: fields.features },
+      data: {
+        name: fields.name,
+        price,
+        billingType: fields.billingType,
+        isPopular: fields.isPopular,
+        tagline: fields.tagline,
+        features: fields.features,
+      },
     });
   } catch (err) {
     console.error("updatePlan failed:", err);

@@ -249,16 +249,30 @@ model TemplateSelection {
 
 // --- Plans & Pricing (Settings → Plans & Pricing) ---
 
+// Defaults to ONE_TIME so existing rows (created before this field existed)
+// keep displaying exactly as they always did — the portal plan card
+// hardcoded a "one-time" label for every plan until this was added.
+enum PlanBillingType {
+  ONE_TIME
+  MONTHLY
+}
+
 model Plan {
-  id           String   @id @default(cuid())
+  id           String          @id @default(cuid())
   name         String
-  price        Decimal  @db.Decimal(10, 2)
+  price        Decimal         @db.Decimal(10, 2)
+  billingType  PlanBillingType @default(ONE_TIME)
+  // Highlights this plan with a "Most Popular" badge on the client portal.
+  // At most one plan is expected to have this on at a time, but it isn't
+  // DB-enforced — admins can toggle more than one, and the UI just shows
+  // the badge on whichever ones are flagged.
+  isPopular    Boolean         @default(false)
   tagline      String?
   features     String[]
-  isActive     Boolean  @default(true)
-  displayOrder Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean         @default(true)
+  displayOrder Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   selections TemplateSelection[]
 

@@ -84,13 +84,12 @@ export function PortalGrid({
 
       {plans.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {plans.map((plan, i) => (
+          {plans.map((plan) => (
             <PortalPlanCard
               key={plan.id}
               plan={plan}
               selected={plan.id === planId}
               showPricing={showPricing}
-              featured={i === Math.floor(plans.length / 2)}
               onSelect={() => setPlanId(plan.id)}
             />
           ))}

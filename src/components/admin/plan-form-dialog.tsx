@@ -14,8 +14,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { createPlan, updatePlan } from "@/lib/actions/plans";
-import type { Plan } from "@prisma/client";
+import type { Plan, PlanBillingType } from "@prisma/client";
+
+const BILLING_TYPE_LABELS: Record<PlanBillingType, string> = {
+  ONE_TIME: "One-time",
+  MONTHLY: "Monthly",
+};
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -38,6 +45,7 @@ export function PlanFormDialog({
 }) {
   const action = plan ? updatePlan.bind(null, plan.id) : createPlan;
   const [state, formAction] = useActionState(action, {});
+  const [isPopular, setIsPopular] = useState(plan?.isPopular ?? false);
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
@@ -66,11 +74,12 @@ export function PlanFormDialog({
             </div>
           ) : null}
 
+          <div className="space-y-1.5">
+            <Label htmlFor="plan-name">Plan name</Label>
+            <Input id="plan-name" name="name" required defaultValue={plan?.name} />
+          </div>
+
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="plan-name">Plan name</Label>
-              <Input id="plan-name" name="name" required defaultValue={plan?.name} />
-            </div>
             <div className="space-y-1.5">
               <Label htmlFor="plan-price">Price</Label>
               <Input
@@ -83,6 +92,47 @@ export function PlanFormDialog({
                 defaultValue={plan ? Number(plan.price) : undefined}
               />
             </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-billing-type">Billing</Label>
+              <Select name="billingType" defaultValue={plan?.billingType ?? "ONE_TIME"}>
+                <SelectTrigger id="plan-billing-type" className="w-full">
+                  {/* Bare SelectValue only resolves a label once the popup's
+                      been opened at least once — see client-form.tsx for
+                      the full explanation of why this needs a children
+                      render-prop instead. */}
+                  <SelectValue>
+                    {(value) => BILLING_TYPE_LABELS[value as PlanBillingType] ?? String(value)}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ONE_TIME">One-time</SelectItem>
+                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-4 rounded-xl bg-secondary px-4 py-3">
+            <span className="text-sm font-bold text-foreground">Most popular</span>
+            <input type="hidden" name="isPopular" value={isPopular ? "true" : "false"} />
+            <button
+              type="button"
+              role="switch"
+              aria-checked={isPopular}
+              aria-label="Mark as most popular"
+              onClick={() => setIsPopular((v) => !v)}
+              className={cn(
+                "inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors",
+                isPopular ? "bg-primary" : "bg-border"
+              )}
+            >
+              <span
+                className={cn(
+                  "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
+                  isPopular ? "translate-x-[18px]" : "translate-x-0.5"
+                )}
+              />
+            </button>
           </div>
 
           <div className="space-y-1.5">

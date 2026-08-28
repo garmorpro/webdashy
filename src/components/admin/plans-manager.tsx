@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronUp, ChevronDown, Check, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlanFormDialog } from "@/components/admin/plan-form-dialog";
 import { ConfirmActionDialog } from "@/components/admin/confirm-action-dialog";
 import { togglePlanActive, movePlan, deletePlan } from "@/lib/actions/plans";
+import { cn } from "@/lib/utils";
 import type { Plan } from "@prisma/client";
 
 export function PlansManager({ plans }: { plans: Plan[] }) {
@@ -53,7 +54,20 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {plans.map((plan, i) => (
-            <div key={plan.id} className="relative flex flex-col rounded-xl bg-secondary p-4">
+            <div
+              key={plan.id}
+              className={cn(
+                "relative flex flex-col rounded-xl bg-secondary p-4",
+                plan.isPopular && "ring-2 ring-primary"
+              )}
+            >
+              {plan.isPopular ? (
+                <span className="absolute -top-2.5 left-4 flex items-center gap-1 rounded-full bg-primary px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground">
+                  <Star className="h-2.5 w-2.5 fill-current" />
+                  Most Popular
+                </span>
+              ) : null}
+
               <div className="absolute right-3 top-3 flex flex-col">
                 <button
                   type="button"
@@ -87,6 +101,9 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
               <h3 className="mt-3 text-sm font-extrabold text-foreground">{plan.name}</h3>
               <p className="text-xl font-extrabold text-foreground">
                 ${Number(plan.price).toLocaleString()}
+                <span className="ml-1 text-xs font-semibold text-muted-foreground">
+                  {plan.billingType === "MONTHLY" ? "/month" : "one-time"}
+                </span>
               </p>
               {plan.tagline ? (
                 <p className="mt-0.5 text-xs font-medium text-muted-foreground">{plan.tagline}</p>
