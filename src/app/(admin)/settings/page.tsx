@@ -5,6 +5,7 @@ import { getAbsoluteUrl } from "@/lib/site-url";
 import { PageHeader } from "@/components/admin/page-header";
 import { ProfileForm } from "@/components/admin/profile-form";
 import { PortalPricingToggle } from "@/components/admin/portal-pricing-toggle";
+import { PlanCategoriesManager } from "@/components/admin/plan-categories-manager";
 import { PlansManager } from "@/components/admin/plans-manager";
 import { InvoiceSettingsForm } from "@/components/admin/invoice-settings-form";
 import { ApiAccessSection } from "@/components/admin/api-access-section";
@@ -16,9 +17,10 @@ export default async function SettingsPage() {
   // proxy.ts guarantees a session exists for any route under (admin), but
   // TypeScript doesn't know that — fall back to empty values rather than
   // asserting, in case that ever changes.
-  const [user, plans, settings, webhookUrl] = await Promise.all([
+  const [user, plans, planCategories, settings, webhookUrl] = await Promise.all([
     session?.user?.id ? db.user.findUnique({ where: { id: session.user.id } }) : null,
-    db.plan.findMany({ orderBy: { displayOrder: "asc" } }),
+    db.plan.findMany({ orderBy: { displayOrder: "asc" }, include: { category: true } }),
+    db.planCategory.findMany({ orderBy: { displayOrder: "asc" } }),
     getAppSettings(),
     getAbsoluteUrl("/api/leads"),
   ]);
@@ -36,7 +38,12 @@ export default async function SettingsPage() {
             <PortalPricingToggle showPricingInPortal={settings.showPricingInPortal} />
           </div>
           <div className="mt-5">
-            <PlansManager plans={plans} oneTimeFooterNote={settings.oneTimeFooterNote} />
+            <PlanCategoriesManager categories={planCategories} />
+            <PlansManager
+              plans={plans}
+              categories={planCategories}
+              oneTimeFooterNote={settings.oneTimeFooterNote}
+            />
           </div>
         </div>
 

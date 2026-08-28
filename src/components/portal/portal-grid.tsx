@@ -15,18 +15,27 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { confirmPortalSelection } from "@/lib/actions/public-portal";
-import type { Category, Template, Plan } from "@prisma/client";
+import { cn } from "@/lib/utils";
+import type { Category, Template, Plan, PlanCategory } from "@prisma/client";
+
+type PlanWithCategory = Plan & { category: PlanCategory | null };
+
+// Sentinel for the synthesized tab that groups any plan with no category
+// assigned yet — never a real PlanCategory id, so it can't collide.
+const OTHER_TAB = "__other__";
 
 export function PortalGrid({
   token,
   templates,
   plans,
+  categories,
   showPricing,
   oneTimeFooterNote,
 }: {
   token: string;
   templates: (Template & { category: Category | null })[];
-  plans: Plan[];
+  plans: PlanWithCategory[];
+  categories: PlanCategory[];
   showPricing: boolean;
   oneTimeFooterNote: string | null;
 }) {
@@ -38,15 +47,31 @@ export function PortalGrid({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Tabs are built from whichever categories actually have a plan in them
+  // (in the admin's own displayOrder), plus a trailing "Other" tab only if
+  // some plan has no category yet — never an empty tab with nothing to show.
+  const hasUncategorized = plans.some((p) => !p.categoryId);
+  const tabs = [
+    ...categories
+      .filter((c) => plans.some((p) => p.categoryId === c.id))
+      .map((c) => ({ id: c.id, name: c.name })),
+    ...(hasUncategorized ? [{ id: OTHER_TAB, name: "Other" }] : []),
+  ];
+  const [activeTab, setActiveTab] = useState(tabs[0]?.id ?? OTHER_TAB);
+
+  const tabPlans = plans.filter((p) =>
+    activeTab === OTHER_TAB ? !p.categoryId : p.categoryId === activeTab
+  );
   // Monthly plans are the main grid; one-time plans are selectable the same
   // way, just tucked behind the "pay once?" link/modal below instead of
-  // cluttering the grid with a second row of cards.
-  const cardPlans = plans.filter((p) => p.billingType === "MONTHLY");
-  const oneTimePlans = plans.filter((p) => p.billingType === "ONE_TIME");
+  // cluttering the grid with a second row of cards. Both scoped to the
+  // active tab — switching tabs browses a different product line's plans.
+  const cardPlans = tabPlans.filter((p) => p.billingType === "MONTHLY");
+  const oneTimePlans = tabPlans.filter((p) => p.billingType === "ONE_TIME");
 
   const selectedTemplate = templates.find((t) => t.id === templateId) ?? null;
-  // Looks up the full plans list (not just cardPlans) — the selection can
-  // be a one-time plan picked from the modal below, not just a card here.
+  // Looks up the FULL plans list (not tabPlans) — a selection made under one
+  // tab must stay reflected in the sticky bar even after switching tabs.
   const selectedPlan = plans.find((p) => p.id === planId) ?? null;
   const canConfirm = Boolean(templateId && planId);
 
@@ -86,12 +111,34 @@ export function PortalGrid({
         ))}
       </div>
 
-      <div className="mb-8 mt-14 text-center sm:mb-10">
+      <div className="mb-6 mt-14 text-center sm:mb-8">
         <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Choose Your Plan</h2>
         <p className="mt-2 text-sm text-slate-500 sm:text-base">
           Every plan includes your selected template, built out and launched for you.
         </p>
       </div>
+
+      {tabs.length > 1 ? (
+        <div className="mb-8 flex justify-center sm:mb-10">
+          <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-semibold transition-colors",
+                  activeTab === tab.id
+                    ? "bg-[#1b2951] text-white"
+                    : "text-slate-600 hover:text-slate-900"
+                )}
+              >
+                {tab.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {cardPlans.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">

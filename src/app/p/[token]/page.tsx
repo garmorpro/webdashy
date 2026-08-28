@@ -79,9 +79,16 @@ export default async function PublicPortalPage({
     console.error("Failed to record portal view:", err);
   }
 
-  const plans = portal.selection
-    ? []
-    : await db.plan.findMany({ where: { isActive: true }, orderBy: { displayOrder: "asc" } });
+  const [plans, planCategories] = await Promise.all([
+    portal.selection
+      ? Promise.resolve([])
+      : db.plan.findMany({
+          where: { isActive: true },
+          orderBy: { displayOrder: "asc" },
+          include: { category: true },
+        }),
+    portal.selection ? Promise.resolve([]) : db.planCategory.findMany({ orderBy: { displayOrder: "asc" } }),
+  ]);
 
   return (
     <PortalShell clientName={portal.client.businessName} message={portal.message}>
@@ -96,6 +103,7 @@ export default async function PublicPortalPage({
           token={token}
           templates={portal.templates.map((t) => t.template)}
           plans={plans}
+          categories={planCategories}
           showPricing={settings.showPricingInPortal}
           oneTimeFooterNote={settings.oneTimeFooterNote}
         />

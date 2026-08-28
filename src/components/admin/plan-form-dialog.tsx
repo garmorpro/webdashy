@@ -17,12 +17,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { createPlan, updatePlan } from "@/lib/actions/plans";
-import type { Plan, PlanBillingType } from "@prisma/client";
+import type { Plan, PlanBillingType, PlanCategory } from "@prisma/client";
 
 const BILLING_TYPE_LABELS: Record<PlanBillingType, string> = {
   ONE_TIME: "One-time",
   MONTHLY: "Monthly",
 };
+
+// Sentinel for "no category" — Plan.categoryId is nullable, but Select needs
+// a real string value for its own item; mapped back to null on submit.
+const NO_CATEGORY = "none";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -77,12 +81,14 @@ export function PlanFormDialog({
   open,
   onOpenChange,
   plan,
+  categories,
   defaultBillingType = "MONTHLY",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** null = creating a new plan; a Plan = editing that one. */
   plan: Plan | null;
+  categories: PlanCategory[];
   /** Only used when plan is null (creating) — lets the "Plans" section's Add
    * button default to Monthly and the "One-Time Options" section's default
    * to One-time, matching whichever list the admin clicked "Add" from.
@@ -98,6 +104,7 @@ export function PlanFormDialog({
   const [billingType, setBillingType] = useState<PlanBillingType>(
     plan?.billingType ?? defaultBillingType
   );
+  const [categoryId, setCategoryId] = useState(plan?.categoryId ?? NO_CATEGORY);
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
@@ -129,6 +136,35 @@ export function PlanFormDialog({
           <div className="space-y-1.5">
             <Label htmlFor="plan-name">Plan name</Label>
             <Input id="plan-name" name="name" required defaultValue={plan?.name} />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="plan-category">Category</Label>
+            <Select
+              name="categoryId"
+              value={categoryId}
+              onValueChange={(value) => setCategoryId(value as string)}
+            >
+              <SelectTrigger id="plan-category" className="w-full">
+                <SelectValue>
+                  {(value) =>
+                    categories.find((c) => c.id === value)?.name ??
+                    (value === NO_CATEGORY ? "No category (Other tab)" : String(value))
+                  }
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={NO_CATEGORY}>No category (Other tab)</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Which tab this plan shows under on the client portal.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-4">

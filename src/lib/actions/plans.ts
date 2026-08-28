@@ -35,6 +35,9 @@ function readPlanFields(formData: FormData) {
     name: get("name"),
     priceRaw: get("price"),
     billingType,
+    // "none" is the form's sentinel for "no category" — Select needs a
+    // real string value for its own item, unlike the nullable DB column.
+    categoryId: ["none", ""].includes(get("categoryId")) ? null : get("categoryId"),
     isPopular: get("isPopular") === "true",
     isRecommended: get("isRecommended") === "true",
     tagline: get("tagline") || null,
@@ -69,6 +72,7 @@ export async function createPlan(
         name: fields.name,
         price,
         billingType: fields.billingType,
+        categoryId: fields.categoryId,
         isPopular: fields.isPopular,
         isRecommended: fields.isRecommended,
         tagline: fields.tagline,
@@ -109,6 +113,7 @@ export async function updatePlan(
         name: fields.name,
         price,
         billingType: fields.billingType,
+        categoryId: fields.categoryId,
         isPopular: fields.isPopular,
         isRecommended: fields.isRecommended,
         tagline: fields.tagline,

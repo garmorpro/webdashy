@@ -11,9 +11,10 @@ import { ConfirmActionDialog } from "@/components/admin/confirm-action-dialog";
 import { togglePlanActive, movePlan, deletePlan } from "@/lib/actions/plans";
 import { updateOneTimeFooterNote } from "@/lib/actions/settings";
 import { cn } from "@/lib/utils";
-import type { Plan, PlanBillingType } from "@prisma/client";
+import type { Plan, PlanBillingType, PlanCategory } from "@prisma/client";
 
 type FormTarget = Plan | "new-monthly" | "new-onetime" | null;
+type PlanWithCategory = Plan & { category: PlanCategory | null };
 
 function PlanCard({
   plan,
@@ -24,7 +25,7 @@ function PlanCard({
   onToggle,
   onDelete,
 }: {
-  plan: Plan;
+  plan: PlanWithCategory;
   index: number;
   total: number;
   onMove: (plan: Plan, direction: "up" | "down") => void;
@@ -81,6 +82,9 @@ function PlanCard({
             Recommended
           </Badge>
         ) : null}
+        <Badge variant="secondary" className="w-fit bg-card text-muted-foreground">
+          {plan.category?.name ?? "Other"}
+        </Badge>
       </div>
 
       <h3 className="mt-3 text-sm font-extrabold text-foreground">{plan.name}</h3>
@@ -171,9 +175,11 @@ function OneTimeFooterNoteField({ oneTimeFooterNote }: { oneTimeFooterNote: stri
 
 export function PlansManager({
   plans,
+  categories,
   oneTimeFooterNote,
 }: {
-  plans: Plan[];
+  plans: PlanWithCategory[];
+  categories: PlanCategory[];
   oneTimeFooterNote: string | null;
 }) {
   const [formTarget, setFormTarget] = useState<FormTarget>(null);
@@ -276,6 +282,7 @@ export function PlansManager({
         open={formTarget !== null}
         onOpenChange={(open) => !open && setFormTarget(null)}
         plan={editingPlan}
+        categories={categories}
         defaultBillingType={defaultBillingType}
       />
 

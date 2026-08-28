@@ -257,11 +257,32 @@ enum PlanBillingType {
   MONTHLY
 }
 
+// Client-portal product lines shown as tabs (e.g. "Websites" / "Reviews" /
+// "Website + Reviews") — open-ended and admin-managed, same idea as
+// Template's Category model, kept as its own model rather than reusing that
+// one since the two are unrelated concepts (a product line vs. a template
+// style). displayOrder controls left-to-right tab order.
+model PlanCategory {
+  id           String   @id @default(cuid())
+  name         String
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  plans Plan[]
+}
+
 model Plan {
   id            String          @id @default(cuid())
   name          String
   price         Decimal         @db.Decimal(10, 2)
   billingType   PlanBillingType @default(ONE_TIME)
+  // Nullable so existing plans aren't broken by this migration — the portal
+  // shows an uncategorized plan under a synthesized "Other" tab until the
+  // admin assigns a real category. A one-time plan's category is what
+  // determines which tab's "pay once?" footer/modal it shows up in.
+  categoryId    String?
+  category      PlanCategory?   @relation(fields: [categoryId], references: [id])
   // Two independent highlight badges shown on the client portal (and
   // mirrored on the admin's own plan cards) — isPopular is the bold
   // top-ribbon "Most Popular" treatment, isRecommended a smaller
@@ -280,6 +301,7 @@ model Plan {
   selections TemplateSelection[]
 
   @@index([isActive])
+  @@index([categoryId])
 }
 
 // Single-row app-wide settings (id is always the literal "singleton" — see
