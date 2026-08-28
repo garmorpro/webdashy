@@ -28,14 +28,19 @@ function parseFeatures(raw: string): string[] {
 function readPlanFields(formData: FormData) {
   const get = (key: string) => String(formData.get(key) ?? "").trim();
   const billingTypeRaw = get("billingType");
+  // Falls back to ONE_TIME on anything unrecognized rather than trusting
+  // the raw value — formData is untrusted input (see clients.ts).
+  const billingType = (billingTypeRaw === "MONTHLY" ? "MONTHLY" : "ONE_TIME") as PlanBillingType;
   return {
     name: get("name"),
     priceRaw: get("price"),
-    // Falls back to ONE_TIME on anything unrecognized rather than trusting
-    // the raw value — formData is untrusted input (see clients.ts).
-    billingType: (billingTypeRaw === "MONTHLY" ? "MONTHLY" : "ONE_TIME") as PlanBillingType,
+    billingType,
     isPopular: get("isPopular") === "true",
     isRecommended: get("isRecommended") === "true",
+    // The dialog only shows/submits this field for a ONE_TIME plan — but
+    // clear it here too rather than trusting the client not to send a
+    // stale value if billingType flips back to MONTHLY.
+    footerNote: billingType === "ONE_TIME" ? get("footerNote") || null : null,
     tagline: get("tagline") || null,
     features: parseFeatures(get("features")),
   };
@@ -70,6 +75,7 @@ export async function createPlan(
         billingType: fields.billingType,
         isPopular: fields.isPopular,
         isRecommended: fields.isRecommended,
+        footerNote: fields.footerNote,
         tagline: fields.tagline,
         features: fields.features,
         displayOrder: (maxOrder._max.displayOrder ?? -1) + 1,
@@ -110,6 +116,7 @@ export async function updatePlan(
         billingType: fields.billingType,
         isPopular: fields.isPopular,
         isRecommended: fields.isRecommended,
+        footerNote: fields.footerNote,
         tagline: fields.tagline,
         features: fields.features,
       },

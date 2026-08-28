@@ -35,8 +35,21 @@ export function PortalGrid({
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // A one-time plan with a footer note set exists purely to produce that
+  // note — it's excluded from the selectable grid entirely rather than
+  // shown as a redundant card that duplicates what the note already says.
+  // A one-time plan WITHOUT a note still behaves like any other plan (a
+  // real, directly selectable one-time tier).
+  const isFooterOnly = (p: Plan) => p.billingType === "ONE_TIME" && Boolean(p.footerNote);
+  const cardPlans = plans.filter((p) => !isFooterOnly(p));
+  // Gated behind showPricing too, same as the plan cards themselves, since a
+  // note like "also available for $3,800" is itself a dollar amount.
+  const footerNotes = showPricing
+    ? plans.filter(isFooterOnly).map((p) => p.footerNote as string)
+    : [];
+
   const selectedTemplate = templates.find((t) => t.id === templateId) ?? null;
-  const selectedPlan = plans.find((p) => p.id === planId) ?? null;
+  const selectedPlan = cardPlans.find((p) => p.id === planId) ?? null;
   const canConfirm = Boolean(templateId && planId);
 
   function handleConfirm() {
@@ -82,9 +95,9 @@ export function PortalGrid({
         </p>
       </div>
 
-      {plans.length > 0 ? (
+      {cardPlans.length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-          {plans.map((plan) => (
+          {cardPlans.map((plan) => (
             <PortalPlanCard
               key={plan.id}
               plan={plan}
@@ -99,6 +112,16 @@ export function PortalGrid({
           No plans are available yet — reach out and we&apos;ll get you a quote.
         </p>
       )}
+
+      {footerNotes.length > 0 ? (
+        <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center">
+          {footerNotes.map((note, i) => (
+            <p key={i} className="text-sm text-slate-600">
+              {note}
+            </p>
+          ))}
+        </div>
+      ) : null}
 
       <div className="sticky bottom-4 mt-10 flex flex-col items-center gap-3 rounded-2xl bg-[#26315e] px-6 py-4 text-center shadow-2xl sm:flex-row sm:justify-between sm:text-left">
         <p className="text-sm text-slate-300">

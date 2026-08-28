@@ -270,6 +270,11 @@ model Plan {
   // more than one, the UI just shows the badge on whichever are flagged.
   isPopular     Boolean         @default(false)
   isRecommended Boolean         @default(false)
+  // Free text shown in a small footer note below the plan grid on the
+  // client portal — only meaningful (and only editable in the UI) when
+  // billingType is ONE_TIME. Cleared server-side if the plan isn't
+  // ONE_TIME, so it can never linger stale on a monthly plan.
+  footerNote    String?
   tagline       String?
   features      String[]
   isActive      Boolean         @default(true)

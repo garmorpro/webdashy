@@ -117,6 +117,11 @@ export function PlansManager({ plans }: { plans: Plan[] }) {
               {plan.tagline ? (
                 <p className="mt-0.5 text-xs font-medium text-muted-foreground">{plan.tagline}</p>
               ) : null}
+              {plan.footerNote ? (
+                <p className="mt-2 rounded-lg bg-card px-2.5 py-1.5 text-[11px] italic text-muted-foreground">
+                  Footer: &ldquo;{plan.footerNote}&rdquo;
+                </p>
+              ) : null}
 
               {plan.features.length > 0 ? (
                 <ul className="mt-3 flex flex-1 flex-col gap-1.5">

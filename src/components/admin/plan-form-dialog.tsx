@@ -87,6 +87,7 @@ export function PlanFormDialog({
   const [state, formAction] = useActionState(action, {});
   const [isPopular, setIsPopular] = useState(plan?.isPopular ?? false);
   const [isRecommended, setIsRecommended] = useState(plan?.isRecommended ?? false);
+  const [billingType, setBillingType] = useState<PlanBillingType>(plan?.billingType ?? "ONE_TIME");
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
@@ -135,7 +136,11 @@ export function PlanFormDialog({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="plan-billing-type">Billing</Label>
-              <Select name="billingType" defaultValue={plan?.billingType ?? "ONE_TIME"}>
+              <Select
+                name="billingType"
+                value={billingType}
+                onValueChange={(value) => setBillingType(value as PlanBillingType)}
+              >
                 <SelectTrigger id="plan-billing-type" className="w-full">
                   {/* Bare SelectValue only resolves a label once the popup's
                       been opened at least once — see client-form.tsx for
@@ -167,6 +172,25 @@ export function PlanFormDialog({
               onChange={setIsRecommended}
             />
           </div>
+
+          {billingType === "ONE_TIME" ? (
+            <div className="space-y-1.5">
+              <Label htmlFor="plan-footer-note">Footer note</Label>
+              <Textarea
+                id="plan-footer-note"
+                name="footerNote"
+                rows={2}
+                placeholder={
+                  'Prefer to pay once? Also available as a one-time build — $3,800 (hosting $10/mo, edits optional).'
+                }
+                defaultValue={plan?.footerNote ?? ""}
+              />
+              <p className="text-xs text-muted-foreground">
+                Shown as its own note below the plan grid on the client portal. Leave blank to
+                hide it. Only shown for one-time plans.
+              </p>
+            </div>
+          ) : null}
 
           <div className="space-y-1.5">
             <Label htmlFor="plan-tagline">Tagline</Label>
