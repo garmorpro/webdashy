@@ -19,10 +19,7 @@ export default async function SettingsPage() {
   // asserting, in case that ever changes.
   const [user, plans, planCategories, settings, webhookUrl] = await Promise.all([
     session?.user?.id ? db.user.findUnique({ where: { id: session.user.id } }) : null,
-    db.plan.findMany({
-      orderBy: { displayOrder: "asc" },
-      include: { category: true, bundleComponents: true },
-    }),
+    db.plan.findMany({ orderBy: { displayOrder: "asc" }, include: { category: true } }),
     db.planCategory.findMany({ orderBy: { displayOrder: "asc" } }),
     getAppSettings(),
     getAbsoluteUrl("/api/leads"),

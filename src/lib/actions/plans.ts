@@ -42,10 +42,13 @@ function readPlanFields(formData: FormData) {
     isRecommended: get("isRecommended") === "true",
     tagline: get("tagline") || null,
     features: parseFeatures(get("features")),
-    // Which OTHER plans this plan bundles together, for the "Why bundle?"
-    // savings panel — see the Plan model's own comment. Empty for a plan
-    // that isn't a bundle.
-    bundleComponentIds: formData.getAll("bundleComponentIds").map(String).filter(Boolean),
+    // "Why bundle?" panel fields — hand-typed, not computed (see the Plan
+    // model's own comment). Cleared server-side below when isBundle is off,
+    // same as billingType/footerNote elsewhere in this file.
+    isBundle: get("isBundle") === "true",
+    bundleWhyText: get("bundleWhyText") || null,
+    bundleLines: parseFeatures(get("bundleLines")),
+    bundleSavingsText: get("bundleSavingsText") || null,
   };
 }
 
@@ -82,7 +85,13 @@ export async function createPlan(
         tagline: fields.tagline,
         features: fields.features,
         displayOrder: (maxOrder._max.displayOrder ?? -1) + 1,
-        bundleComponents: { connect: fields.bundleComponentIds.map((id) => ({ id })) },
+        isBundle: fields.isBundle,
+        // Nulled/emptied whenever isBundle is off, same pattern as
+        // billingType clearing footerNote elsewhere in this file — keeps a
+        // toggled-off bundle from leaving stale copy behind if re-enabled.
+        bundleWhyText: fields.isBundle ? fields.bundleWhyText : null,
+        bundleLines: fields.isBundle ? fields.bundleLines : [],
+        bundleSavingsText: fields.isBundle ? fields.bundleSavingsText : null,
       },
     });
   } catch (err) {
@@ -111,10 +120,6 @@ export async function updatePlan(
     return { error: "Price must be a positive number." };
   }
 
-  // Defense in depth — the picker UI already excludes the plan being
-  // edited from its own options, but formData is untrusted (see clients.ts).
-  const bundleComponentIds = fields.bundleComponentIds.filter((id) => id !== planId);
-
   try {
     await db.plan.update({
       where: { id: planId },
@@ -127,9 +132,10 @@ export async function updatePlan(
         isRecommended: fields.isRecommended,
         tagline: fields.tagline,
         features: fields.features,
-        // set (not connect) so removing a checkbox actually detaches that
-        // plan too, not just adds newly checked ones.
-        bundleComponents: { set: bundleComponentIds.map((id) => ({ id })) },
+        isBundle: fields.isBundle,
+        bundleWhyText: fields.isBundle ? fields.bundleWhyText : null,
+        bundleLines: fields.isBundle ? fields.bundleLines : [],
+        bundleSavingsText: fields.isBundle ? fields.bundleSavingsText : null,
       },
     });
   } catch (err) {

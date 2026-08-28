@@ -82,18 +82,13 @@ export function PlanFormDialog({
   onOpenChange,
   plan,
   categories,
-  allPlans,
   defaultBillingType = "MONTHLY",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** null = creating a new plan; a Plan = editing that one. */
-  plan: (Plan & { bundleComponents?: Plan[] }) | null;
+  plan: Plan | null;
   categories: PlanCategory[];
-  /** Every plan, for the "Bundle includes" picker — the plan being edited
-   * (if any) is filtered out of the list itself, a plan can't bundle
-   * itself. */
-  allPlans: Plan[];
   /** Only used when plan is null (creating) — lets the "Plans" section's Add
    * button default to Monthly and the "One-Time Options" section's default
    * to One-time, matching whichever list the admin clicked "Add" from.
@@ -106,20 +101,11 @@ export function PlanFormDialog({
   const [state, formAction] = useActionState(action, {});
   const [isPopular, setIsPopular] = useState(plan?.isPopular ?? false);
   const [isRecommended, setIsRecommended] = useState(plan?.isRecommended ?? false);
+  const [isBundle, setIsBundle] = useState(plan?.isBundle ?? false);
   const [billingType, setBillingType] = useState<PlanBillingType>(
     plan?.billingType ?? defaultBillingType
   );
   const [categoryId, setCategoryId] = useState(plan?.categoryId ?? NO_CATEGORY);
-  const [bundleComponentIds, setBundleComponentIds] = useState<string[]>(
-    plan?.bundleComponents?.map((p) => p.id) ?? []
-  );
-  const bundlePickerOptions = allPlans.filter((p) => p.id !== plan?.id);
-
-  function toggleBundleComponent(id: string) {
-    setBundleComponentIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  }
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
@@ -182,35 +168,45 @@ export function PlanFormDialog({
             </p>
           </div>
 
-          {bundlePickerOptions.length > 0 ? (
-            <div className="space-y-1.5">
-              <Label>Bundle includes</Label>
-              <div className="flex max-h-36 flex-col gap-1 overflow-y-auto rounded-xl border border-border p-2">
-                {bundlePickerOptions.map((p) => (
-                  <label
-                    key={p.id}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-secondary"
-                  >
-                    <input
-                      type="checkbox"
-                      name="bundleComponentIds"
-                      value={p.id}
-                      checked={bundleComponentIds.includes(p.id)}
-                      onChange={() => toggleBundleComponent(p.id)}
-                      className="h-4 w-4 rounded border-border accent-primary"
-                    />
-                    <span className="font-medium text-foreground">{p.name}</span>
-                    <span className="text-xs text-muted-foreground">
-                      ${Number(p.price).toLocaleString()}
-                      {p.billingType === "MONTHLY" ? "/mo" : " one-time"}
-                    </span>
-                  </label>
-                ))}
+          <ToggleField
+            name="isBundle"
+            label="Is this a bundle?"
+            checked={isBundle}
+            onChange={setIsBundle}
+          />
+
+          {isBundle ? (
+            <div className="space-y-4 rounded-xl border border-border p-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="plan-bundle-why">Why bundle?</Label>
+                <Textarea
+                  id="plan-bundle-why"
+                  name="bundleWhyText"
+                  rows={2}
+                  placeholder="Buying them separately adds up fast. Bundled, you get the website and the full review engine under one bill — and you still come out ahead."
+                  defaultValue={plan?.bundleWhyText ?? ""}
+                />
               </div>
-              <p className="text-xs text-muted-foreground">
-                For a plan that bundles others together — shows a real savings comparison next to
-                this plan on the client portal. Leave empty for a normal plan.
-              </p>
+              <div className="space-y-1.5">
+                <Label htmlFor="plan-bundle-lines">Price comparison</Label>
+                <Textarea
+                  id="plan-bundle-lines"
+                  name="bundleLines"
+                  rows={3}
+                  placeholder={"One per line, e.g.\nWebsite only — $175/mo\nFull review engine — $179/mo"}
+                  defaultValue={plan?.bundleLines.join("\n") ?? ""}
+                />
+                <p className="text-xs text-muted-foreground">One comparison line per row.</p>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="plan-bundle-savings">Savings callout</Label>
+                <Input
+                  id="plan-bundle-savings"
+                  name="bundleSavingsText"
+                  placeholder="You save $57/month"
+                  defaultValue={plan?.bundleSavingsText ?? ""}
+                />
+              </div>
             </div>
           ) : null}
 

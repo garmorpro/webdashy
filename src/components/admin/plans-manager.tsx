@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import type { Plan, PlanBillingType, PlanCategory } from "@prisma/client";
 
 type FormTarget = Plan | "new-monthly" | "new-onetime" | null;
-type PlanWithCategory = Plan & { category: PlanCategory | null; bundleComponents: Plan[] };
+type PlanWithCategory = Plan & { category: PlanCategory | null };
 
 function PlanCard({
   plan,
@@ -80,6 +80,11 @@ function PlanCard({
         {plan.isRecommended ? (
           <Badge variant="secondary" className="w-fit bg-blue-50 text-blue-700">
             Recommended
+          </Badge>
+        ) : null}
+        {plan.isBundle ? (
+          <Badge variant="secondary" className="w-fit bg-lime-50 text-lime-700">
+            Bundle
           </Badge>
         ) : null}
         <Badge variant="secondary" className="w-fit bg-card text-muted-foreground">
@@ -283,7 +288,6 @@ export function PlansManager({
         onOpenChange={(open) => !open && setFormTarget(null)}
         plan={editingPlan}
         categories={categories}
-        allPlans={plans}
         defaultBillingType={defaultBillingType}
       />
 

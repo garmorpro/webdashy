@@ -298,15 +298,24 @@ model Plan {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  selections       TemplateSelection[]
-  // Self-relation: which OTHER plans this plan bundles together, purely to
-  // drive the "Why bundle?" savings panel on the portal (real math — sum of
-  // the components' own prices vs. this plan's price — never typed in by
-  // hand). Symmetric by construction (Prisma's implicit self-relation): a
-  // plan set as a component here also gets this plan added to its own
-  // partOfBundles. Doesn't affect selection or pricing, purely informational.
-  bundleComponents Plan[]              @relation("PlanBundleComponents")
-  partOfBundles    Plan[]              @relation("PlanBundleComponents")
+  selections TemplateSelection[]
+
+  // "Why bundle?" panel on the client portal — deliberately hand-typed, not
+  // computed from other plans (an earlier version linked real component
+  // plans and computed the savings automatically; the admin found picking
+  // components more friction than it was worth and asked for a plain
+  // toggle + free text instead, accepting the tradeoff that this copy can
+  // drift from the plans' real prices over time if not kept up to date).
+  isBundle          Boolean  @default(false)
+  // Short paragraph explaining the bundle's value ("Buying them separately
+  // adds up fast...").
+  bundleWhyText     String?
+  // One comparison line per entry, e.g. "Website only — $175/mo" — shown
+  // as a simple list above the savings line.
+  bundleLines       String[]
+  // The highlighted savings callout, e.g. "You save $57/month" — typed
+  // verbatim, not calculated.
+  bundleSavingsText String?
 
   @@index([isActive])
   @@index([categoryId])

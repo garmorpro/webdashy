@@ -19,7 +19,7 @@ import { confirmPortalSelection } from "@/lib/actions/public-portal";
 import { cn } from "@/lib/utils";
 import type { Category, Template, Plan, PlanCategory } from "@prisma/client";
 
-type PlanWithCategory = Plan & { category: PlanCategory | null; bundleComponents: Plan[] };
+type PlanWithCategory = Plan & { category: PlanCategory | null };
 
 // Sentinel for the synthesized tab that groups any plan with no category
 // assigned yet — never a real PlanCategory id, so it can't collide.
@@ -69,10 +69,10 @@ export function PortalGrid({
   // active tab — switching tabs browses a different product line's plans.
   const cardPlans = tabPlans.filter((p) => p.billingType === "MONTHLY");
   const oneTimePlans = tabPlans.filter((p) => p.billingType === "ONE_TIME");
-  // A bundle is any plan on this tab that lists other plans as its
-  // components (Plan.bundleComponents) — drives the "Why bundle?" panel
-  // below the grid. Money math only makes sense when pricing is shown.
-  const bundlePlan = showPricing ? tabPlans.find((p) => p.bundleComponents.length > 0) : undefined;
+  // A bundle is any plan on this tab flagged Plan.isBundle — drives the
+  // "Why bundle?" panel below the grid. Its copy is hand-typed (see
+  // bundle-savings-panel.tsx), so it's shown regardless of showPricing.
+  const bundlePlan = tabPlans.find((p) => p.isBundle);
 
   const selectedTemplate = templates.find((t) => t.id === templateId) ?? null;
   // Looks up the FULL plans list (not tabPlans) — a selection made under one

@@ -85,7 +85,7 @@ export default async function PublicPortalPage({
       : db.plan.findMany({
           where: { isActive: true },
           orderBy: { displayOrder: "asc" },
-          include: { category: true, bundleComponents: true },
+          include: { category: true },
         }),
     portal.selection ? Promise.resolve([]) : db.planCategory.findMany({ orderBy: { displayOrder: "asc" } }),
   ]);
