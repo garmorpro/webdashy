@@ -97,6 +97,7 @@ export default async function PublicPortalPage({
           templates={portal.templates.map((t) => t.template)}
           plans={plans}
           showPricing={settings.showPricingInPortal}
+          oneTimeFooterNote={settings.oneTimeFooterNote}
         />
       )}
     </PortalShell>

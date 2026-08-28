@@ -77,21 +77,27 @@ export function PlanFormDialog({
   open,
   onOpenChange,
   plan,
+  defaultBillingType = "MONTHLY",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   /** null = creating a new plan; a Plan = editing that one. */
   plan: Plan | null;
+  /** Only used when plan is null (creating) — lets the "Plans" section's Add
+   * button default to Monthly and the "One-Time Options" section's default
+   * to One-time, matching whichever list the admin clicked "Add" from.
+   * Unrelated to the schema's own ONE_TIME column default, which only
+   * exists to keep rows created before this field existed displaying
+   * unchanged (see the Plan model's own comment). */
+  defaultBillingType?: PlanBillingType;
 }) {
   const action = plan ? updatePlan.bind(null, plan.id) : createPlan;
   const [state, formAction] = useActionState(action, {});
   const [isPopular, setIsPopular] = useState(plan?.isPopular ?? false);
   const [isRecommended, setIsRecommended] = useState(plan?.isRecommended ?? false);
-  // Defaults a brand-new plan to Monthly (most plans are) — unrelated to
-  // the schema's own ONE_TIME default, which only exists to keep rows
-  // created before this field existed displaying exactly as they always
-  // did (see the Plan model's own comment).
-  const [billingType, setBillingType] = useState<PlanBillingType>(plan?.billingType ?? "MONTHLY");
+  const [billingType, setBillingType] = useState<PlanBillingType>(
+    plan?.billingType ?? defaultBillingType
+  );
 
   // Close on a successful save — adjusted during render (comparing against
   // the last-seen state) rather than in a useEffect, per React's guidance
@@ -176,25 +182,6 @@ export function PlanFormDialog({
               onChange={setIsRecommended}
             />
           </div>
-
-          {billingType === "ONE_TIME" ? (
-            <div className="space-y-1.5">
-              <Label htmlFor="plan-footer-note">Footer note</Label>
-              <Textarea
-                id="plan-footer-note"
-                name="footerNote"
-                rows={2}
-                placeholder={
-                  'Prefer to pay once? Also available as a one-time build — $3,800 (hosting $10/mo, edits optional).'
-                }
-                defaultValue={plan?.footerNote ?? ""}
-              />
-              <p className="text-xs text-muted-foreground">
-                Shown as its own note below the plan grid on the client portal. Leave blank to
-                hide it. Only shown for one-time plans.
-              </p>
-            </div>
-          ) : null}
 
           <div className="space-y-1.5">
             <Label htmlFor="plan-tagline">Tagline</Label>

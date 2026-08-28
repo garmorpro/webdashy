@@ -22,34 +22,32 @@ export function PortalGrid({
   templates,
   plans,
   showPricing,
+  oneTimeFooterNote,
 }: {
   token: string;
   templates: (Template & { category: Category | null })[];
   plans: Plan[];
   showPricing: boolean;
+  oneTimeFooterNote: string | null;
 }) {
   const router = useRouter();
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [planId, setPlanId] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [oneTimeModalOpen, setOneTimeModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // A one-time plan with a footer note set exists purely to produce that
-  // note — it's excluded from the selectable grid entirely rather than
-  // shown as a redundant card that duplicates what the note already says.
-  // A one-time plan WITHOUT a note still behaves like any other plan (a
-  // real, directly selectable one-time tier).
-  const isFooterOnly = (p: Plan) => p.billingType === "ONE_TIME" && Boolean(p.footerNote);
-  const cardPlans = plans.filter((p) => !isFooterOnly(p));
-  // Gated behind showPricing too, same as the plan cards themselves, since a
-  // note like "also available for $3,800" is itself a dollar amount.
-  const footerNotes = showPricing
-    ? plans.filter(isFooterOnly).map((p) => p.footerNote as string)
-    : [];
+  // Monthly plans are the main grid; one-time plans are selectable the same
+  // way, just tucked behind the "pay once?" link/modal below instead of
+  // cluttering the grid with a second row of cards.
+  const cardPlans = plans.filter((p) => p.billingType === "MONTHLY");
+  const oneTimePlans = plans.filter((p) => p.billingType === "ONE_TIME");
 
   const selectedTemplate = templates.find((t) => t.id === templateId) ?? null;
-  const selectedPlan = cardPlans.find((p) => p.id === planId) ?? null;
+  // Looks up the full plans list (not just cardPlans) — the selection can
+  // be a one-time plan picked from the modal below, not just a card here.
+  const selectedPlan = plans.find((p) => p.id === planId) ?? null;
   const canConfirm = Boolean(templateId && planId);
 
   function handleConfirm() {
@@ -113,13 +111,17 @@ export function PortalGrid({
         </p>
       )}
 
-      {footerNotes.length > 0 ? (
-        <div className="mx-auto mt-6 max-w-2xl rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center">
-          {footerNotes.map((note, i) => (
-            <p key={i} className="text-sm text-slate-600">
-              {note}
-            </p>
-          ))}
+      {showPricing && oneTimePlans.length > 0 ? (
+        <div className="mt-6 text-center">
+          <button
+            type="button"
+            onClick={() => setOneTimeModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-lime-400 bg-lime-50 px-5 py-2.5 text-sm font-semibold text-lime-800 transition-colors hover:bg-lime-100"
+          >
+            {selectedPlan?.billingType === "ONE_TIME"
+              ? `Selected: ${selectedPlan.name} (one-time) — change?`
+              : (oneTimeFooterNote?.trim() || "Prefer to pay once? See one-time options →")}
+          </button>
         </div>
       ) : null}
 
@@ -191,6 +193,33 @@ export function PortalGrid({
               </Button>
             </div>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={oneTimeModalOpen} onOpenChange={setOneTimeModalOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Pay once instead?</DialogTitle>
+            <DialogDescription>
+              Pick the option that fits — built the same way, billed as a single upfront payment
+              instead of monthly.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {oneTimePlans.map((plan) => (
+              <PortalPlanCard
+                key={plan.id}
+                plan={plan}
+                selected={plan.id === planId}
+                showPricing={showPricing}
+                onSelect={() => {
+                  setPlanId(plan.id);
+                  setOneTimeModalOpen(false);
+                }}
+              />
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </>

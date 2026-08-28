@@ -71,6 +71,26 @@ export async function togglePortalPricingVisibility(showPricingInPortal: boolean
   revalidatePath("/p", "layout");
 }
 
+// Split out from updateAppSettings for the same reason as
+// togglePortalPricingVisibility above — this is edited from inside
+// PlansManager (right above the One-Time Options section), and a full-form
+// upsert from that save would null out Invoice Details.
+export async function updateOneTimeFooterNote(text: string) {
+  const authError = await requireAdmin();
+  if (authError) throw new Error(authError);
+
+  const oneTimeFooterNote = text.trim() || null;
+
+  await db.appSettings.upsert({
+    where: { id: SETTINGS_ID },
+    update: { oneTimeFooterNote },
+    create: { id: SETTINGS_ID, oneTimeFooterNote },
+  });
+
+  revalidatePath("/settings");
+  revalidatePath("/p", "layout");
+}
+
 /**
  * Issues a fresh webhook API key (POST /api/leads — see that route),
  * immediately invalidating any previous one (only the hash is stored, so

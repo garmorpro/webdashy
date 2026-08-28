@@ -37,10 +37,6 @@ function readPlanFields(formData: FormData) {
     billingType,
     isPopular: get("isPopular") === "true",
     isRecommended: get("isRecommended") === "true",
-    // The dialog only shows/submits this field for a ONE_TIME plan — but
-    // clear it here too rather than trusting the client not to send a
-    // stale value if billingType flips back to MONTHLY.
-    footerNote: billingType === "ONE_TIME" ? get("footerNote") || null : null,
     tagline: get("tagline") || null,
     features: parseFeatures(get("features")),
   };
@@ -75,7 +71,6 @@ export async function createPlan(
         billingType: fields.billingType,
         isPopular: fields.isPopular,
         isRecommended: fields.isRecommended,
-        footerNote: fields.footerNote,
         tagline: fields.tagline,
         features: fields.features,
         displayOrder: (maxOrder._max.displayOrder ?? -1) + 1,
@@ -116,7 +111,6 @@ export async function updatePlan(
         billingType: fields.billingType,
         isPopular: fields.isPopular,
         isRecommended: fields.isRecommended,
-        footerNote: fields.footerNote,
         tagline: fields.tagline,
         features: fields.features,
       },
@@ -144,7 +138,17 @@ export async function movePlan(planId: string, direction: "up" | "down") {
   const authError = await requireAdmin();
   if (authError) throw new Error(authError);
 
-  const plans = await db.plan.findMany({ orderBy: { displayOrder: "asc" } });
+  const target = await db.plan.findUnique({ where: { id: planId } });
+  if (!target) return;
+
+  // Scoped to the same billingType — the Settings UI now renders Monthly
+  // and One-Time plans as two separate lists (see plans-manager.tsx), so
+  // reordering must stay within whichever list the admin is looking at
+  // rather than reaching across into the other one.
+  const plans = await db.plan.findMany({
+    where: { billingType: target.billingType },
+    orderBy: { displayOrder: "asc" },
+  });
   const index = plans.findIndex((p) => p.id === planId);
   const swapWith = direction === "up" ? index - 1 : index + 1;
   if (index === -1 || swapWith < 0 || swapWith >= plans.length) return;

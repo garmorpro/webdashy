@@ -270,11 +270,6 @@ model Plan {
   // more than one, the UI just shows the badge on whichever are flagged.
   isPopular     Boolean         @default(false)
   isRecommended Boolean         @default(false)
-  // Free text shown in a small footer note below the plan grid on the
-  // client portal — only meaningful (and only editable in the UI) when
-  // billingType is ONE_TIME. Cleared server-side if the plan isn't
-  // ONE_TIME, so it can never linger stale on a monthly plan.
-  footerNote    String?
   tagline       String?
   features      String[]
   isActive      Boolean         @default(true)
@@ -297,6 +292,12 @@ model AppSettings {
   invoiceFromAddress         String?
   invoicePaymentInstructions String?
   invoiceTerms               String    @default("Net 14")
+  // Shown as the clickable trigger text for the "pay once instead?" popup
+  // on the client portal (only rendered at all when at least one ONE_TIME
+  // Plan exists) — a single line covering every one-time plan, rather than
+  // per-plan text, since the popup already lists each option's own name/
+  // price/features individually. Null falls back to a generic default.
+  oneTimeFooterNote          String?
   // For the POST /api/leads webhook (e.g. an Apple Shortcut) — same hashed-
   // secret pattern as User.resetTokenHash above, never store the raw key.
   // apiKeyPreview is just the key's last 4 chars, purely so the Settings UI

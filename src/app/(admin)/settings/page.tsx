@@ -36,7 +36,7 @@ export default async function SettingsPage() {
             <PortalPricingToggle showPricingInPortal={settings.showPricingInPortal} />
           </div>
           <div className="mt-5">
-            <PlansManager plans={plans} />
+            <PlansManager plans={plans} oneTimeFooterNote={settings.oneTimeFooterNote} />
           </div>
         </div>
 
