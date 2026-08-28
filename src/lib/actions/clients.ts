@@ -145,24 +145,6 @@ export async function archiveClient(clientId: string) {
   revalidatePath(`/clients/${clientId}`);
 }
 
-/**
- * Manually corrects a client's pipeline position — used by ClientStepper
- * when an admin clicks a past (already-completed) step to move the client
- * back to it. Deliberately just a status label change: it never touches
- * the actual portal/questionnaire/invoice/delivery records, which is why
- * the stepper only allows this for *past* steps in the first place —
- * jumping forward would let someone skip real steps (send an invoice,
- * mark it paid) that this can't fabricate.
- */
-export async function setClientStatus(clientId: string, status: ClientStatus) {
-  const authError = await requireAdmin();
-  if (authError) throw new Error(authError);
-
-  await db.client.update({ where: { id: clientId }, data: { status } });
-  revalidatePath("/clients");
-  revalidatePath(`/clients/${clientId}`);
-}
-
 export async function deleteClient(clientId: string) {
   const authError = await requireAdmin();
   if (authError) throw new Error(authError);

@@ -105,7 +105,7 @@ export default async function ClientDetailPage({
       </div>
 
       <div className="mb-6">
-        <ClientStepper clientId={client.id} status={client.status} />
+        <ClientStepper status={client.status} />
       </div>
 
       <div className="max-w-2xl space-y-6">
@@ -119,86 +119,100 @@ export default async function ClientDetailPage({
           </div>
         ) : null}
 
-        <ClientContactSection
-          action={boundUpdate}
-          cancelHref={`/clients/${client.id}`}
-          values={{
-            businessName: client.businessName,
-            contactName: client.contactName,
-            email: client.email,
-            phone: client.phone ?? "",
-            website: client.website ?? "",
-            industry: client.industry ?? "",
-            status: client.status,
-            leadSource: client.leadSource ?? "",
-            estimatedValue: client.estimatedValue?.toString() ?? "",
-            notes: client.notes ?? "",
-          }}
-        />
+        <div id="section-contact">
+          <ClientContactSection
+            action={boundUpdate}
+            cancelHref={`/clients/${client.id}`}
+            values={{
+              businessName: client.businessName,
+              contactName: client.contactName,
+              email: client.email,
+              phone: client.phone ?? "",
+              website: client.website ?? "",
+              industry: client.industry ?? "",
+              status: client.status,
+              leadSource: client.leadSource ?? "",
+              estimatedValue: client.estimatedValue?.toString() ?? "",
+              notes: client.notes ?? "",
+            }}
+          />
+        </div>
 
-        <DesignQuestionnaireSection
-          clientId={client.id}
-          businessName={client.businessName}
-          questionnaire={client.questionnaire}
-          formUrl={questionnaireFormUrl}
-        />
+        <div id="section-questionnaire">
+          <DesignQuestionnaireSection
+            clientId={client.id}
+            businessName={client.businessName}
+            questionnaire={client.questionnaire}
+            formUrl={questionnaireFormUrl}
+          />
+        </div>
 
         {portal && portalUrl ? (
           <>
-            <PortalSummary
-              portalId={portal.id}
-              clientId={client.id}
-              status={portal.status}
-              portalUrl={portalUrl}
-              message={portal.message}
-              templateNames={portal.templates.map((t) => t.template.name)}
-              viewCount={portal.viewCount}
-              createdAt={portal.createdAt}
-              selectedTemplateName={portal.selection?.template.name ?? null}
-              selectedPlanName={portal.selection?.plan?.name ?? null}
-              selectedAt={portal.selection?.selectedAt ?? null}
-            />
+            <div id="section-portal" className="space-y-6">
+              <PortalSummary
+                portalId={portal.id}
+                clientId={client.id}
+                status={portal.status}
+                portalUrl={portalUrl}
+                message={portal.message}
+                templateNames={portal.templates.map((t) => t.template.name)}
+                viewCount={portal.viewCount}
+                createdAt={portal.createdAt}
+                selectedTemplateName={portal.selection?.template.name ?? null}
+                selectedPlanName={portal.selection?.plan?.name ?? null}
+                selectedAt={portal.selection?.selectedAt ?? null}
+              />
 
-            <RequirementsSection
-              portalId={portal.id}
-              clientId={client.id}
-              requirements={portal.requirements}
-              locked={requirementsLocked}
-            />
+              <RequirementsSection
+                portalId={portal.id}
+                clientId={client.id}
+                requirements={portal.requirements}
+                locked={requirementsLocked}
+              />
+            </div>
 
-            <InvoiceSection
-              clientId={client.id}
-              portalId={portal.id}
-              invoice={latestInvoice}
-              locked={invoiceLocked}
-            />
+            <div id="section-invoice">
+              <InvoiceSection
+                clientId={client.id}
+                portalId={portal.id}
+                invoice={latestInvoice}
+                locked={invoiceLocked}
+              />
+            </div>
 
-            <DeliverySection
-              portalId={portal.id}
-              clientId={client.id}
-              delivery={portal.delivery}
-              reviewUrl={reviewUrl}
-              locked={deliveryLocked}
-            />
+            <div id="section-delivery">
+              <DeliverySection
+                portalId={portal.id}
+                clientId={client.id}
+                delivery={portal.delivery}
+                reviewUrl={reviewUrl}
+                locked={deliveryLocked}
+              />
+            </div>
           </>
         ) : portalLocked ? (
-          <SectionLocked
-            title="Template Portal"
-            icon={Link2}
-            reason="Available once the Design Questionnaire is submitted."
-          />
+          <div id="section-portal">
+            <SectionLocked
+              title="Template Portal"
+              icon={Link2}
+              reason="Available once the Design Questionnaire is submitted."
+            />
+          </div>
         ) : (
-          <EmptyState
-            icon={Link2}
-            title="No template portal yet"
-            description="Choose a few templates and create a personalized selection portal for this client."
-            action={
-              <Button size="sm" nativeButton={false} render={<Link href={`/clients/${client.id}/portal/new`} />}>
-                <Plus className="h-4 w-4" />
-                Create Portal
-              </Button>
-            }
-          />
+          <div id="section-portal">
+            <EmptyState
+              icon={Link2}
+              title="No template portal yet"
+              description="Choose a few templates and create a personalized selection portal for this client."
+              action={
+                <Button size="sm" nativeButton={false} render={<Link href={`/clients/${client.id}/portal/new`} />}>
+                  <Plus className="h-4 w-4" />
+                  Create Portal
+                </Button>
+              }
+            />
+          </div>
         )}
       </div>
     </div>

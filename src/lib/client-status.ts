@@ -72,27 +72,27 @@ export const PIPELINE_STEPS = [
   "Complete",
 ] as const;
 
-// One canonical ClientStatus per PIPELINE_STEPS position — used when an
-// admin clicks a *past* (already-completed) step on the stepper to
-// manually correct the client's status back to it (ClientStepper). Where a
-// step folds together two statuses (e.g. "Contact" covers CONTACTED and
-// INTERESTED), this picks the base one — the other is really an automatic
-// sub-flag, not something an admin sets by hand.
-const PIPELINE_STEP_STATUS: ClientStatus[] = [
-  "LEAD",
-  "CONTACTED",
-  "QUESTIONNAIRE_SENT",
-  "QUESTIONNAIRE_DONE",
-  "PORTAL_SENT",
-  "TEMPLATE_SELECTED",
-  "INVOICE_SENT",
-  "BUILDING",
-  "DELIVERED",
-  "WON",
-];
+// One anchor id per PIPELINE_STEPS position — clicking a step on the
+// stepper (ClientStepper) scrolls the client-detail page to the matching
+// workflow card rather than changing anything. Several steps share a card
+// (e.g. "Portal Sent" and "Template & Plan" are both the Template Portal
+// card — the plan is picked as part of that same card's flow), and "Add
+// Lead" has no card of its own, so it points at Contact.
+const PIPELINE_STEP_ANCHORS = [
+  "contact", // Add Lead
+  "contact",
+  "questionnaire", // Questionnaire Sent
+  "questionnaire", // Questionnaire Done
+  "portal", // Portal Sent
+  "portal", // Template & Plan
+  "invoice",
+  "delivery", // Building
+  "delivery", // Delivered
+  "delivery", // Complete
+] as const;
 
-export function statusForPipelineStep(index: number): ClientStatus {
-  return PIPELINE_STEP_STATUS[index] ?? "LEAD";
+export function anchorForPipelineStep(index: number): string {
+  return PIPELINE_STEP_ANCHORS[index] ?? "contact";
 }
 
 // Kanban board columns for the Clients page's "Board" view — same pipeline
