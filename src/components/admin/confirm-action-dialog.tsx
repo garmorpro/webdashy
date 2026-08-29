@@ -39,9 +39,24 @@ export function ConfirmActionDialog({
   /** Either redirect on success (thrown redirects are handled and left to
    * propagate — the dialog unmounts with the navigation, so this dialog's
    * own auto-close below never gets a chance to run, which is fine), or
-   * throw an Error with a user-facing message on failure. Anything else
-   * (a resolved promise, no throw) is treated as success and this dialog
-   * closes itself — the caller does not need to separately close it. */
+   * throw a real Error with a user-facing message on failure. Anything
+   * else (a resolved promise, no throw) is treated as success and this
+   * dialog closes itself — the caller does not need to separately close
+   * it.
+   *
+   * That thrown Error MUST be thrown here, client-side, in this callback
+   * — never inside the Server Action itself. Next.js redacts a Server
+   * Action's thrown error message in production (it's treated as an
+   * uncaught exception, not an expected error — see
+   * https://nextjs.org/docs/app/getting-started/error-handling), so a
+   * server action with a friendly `throw new Error("...")` shows real
+   * users an opaque "Minified React error #441" instead (a real bug this
+   * app shipped with — see deleteTemplate's git history). The correct
+   * shape: the Server Action returns `{ error: string } | undefined`,
+   * and this callback does `const r = await action(...); if (r?.error)
+   * throw new Error(r.error);` — see deleteTemplate/deletePlan/
+   * deleteClient/deletePlanCategory/resetPortalSelection and their call
+   * sites for the established pattern. */
   onConfirm: () => Promise<void>;
 }) {
   const [pending, startTransition] = useTransition();
