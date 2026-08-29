@@ -170,9 +170,17 @@ export async function toggleTemplateFavorite(templateId: string, isFavorite: boo
   revalidatePath("/templates");
 }
 
-export async function deleteTemplate(templateId: string) {
+// Returns { error } instead of throwing on the expected/validation-failure
+// path — Next.js redacts a Server Action's thrown Error message in
+// production (it treats a throw as an uncaught exception, not an expected
+// error; see https://nextjs.org/docs/app/getting-started/error-handling),
+// so a hand-written friendly message here would show up to real users as
+// an opaque "Minified React error #441" instead. The caller re-throws it
+// as a genuine client-side Error, which ConfirmActionDialog's existing
+// catch-and-toast already handles correctly.
+export async function deleteTemplate(templateId: string): Promise<{ error: string } | undefined> {
   const authError = await requireAdmin();
-  if (authError) throw new Error(authError);
+  if (authError) return { error: authError };
 
   try {
     await db.template.delete({ where: { id: templateId } });
@@ -182,12 +190,13 @@ export async function deleteTemplate(templateId: string) {
     // historical record. Archive it instead.
     const code = (err as { code?: string } | null)?.code;
     if (code === "P2003" || code === "P2014") {
-      throw new Error(
-        "This template can't be deleted because a client has selected it. Archive it instead to hide it from new portals."
-      );
+      return {
+        error:
+          "This template can't be deleted because a client has selected it. Archive it instead to hide it from new portals.",
+      };
     }
     console.error("deleteTemplate failed:", err);
-    throw new Error("Something went wrong deleting the template. Please try again.");
+    return { error: "Something went wrong deleting the template. Please try again." };
   }
 
   revalidatePath("/templates");

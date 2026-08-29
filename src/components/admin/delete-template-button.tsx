@@ -15,7 +15,10 @@ export function DeleteTemplateButton({
       title={`Delete ${templateName}?`}
       description="This permanently removes the template and its tag associations. Templates already included in a client portal keep their historical record, but the template itself will no longer be selectable. This can't be undone."
       confirmLabel="Delete Template"
-      onConfirm={() => deleteTemplate(templateId)}
+      onConfirm={async () => {
+        const result = await deleteTemplate(templateId);
+        if (result?.error) throw new Error(result.error);
+      }}
     />
   );
 }

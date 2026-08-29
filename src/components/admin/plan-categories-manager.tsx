@@ -60,12 +60,12 @@ export function PlanCategoriesManager({ categories }: { categories: PlanCategory
 
   function remove(category: PlanCategory) {
     startTransition(async () => {
-      try {
-        await deletePlanCategory(category.id);
-        toast.success(`${category.name} deleted.`);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Couldn't delete this category.");
+      const result = await deletePlanCategory(category.id);
+      if (result?.error) {
+        toast.error(result.error);
+        return;
       }
+      toast.success(`${category.name} deleted.`);
     });
   }
 

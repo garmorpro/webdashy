@@ -166,15 +166,21 @@ export async function setPortalDisabled(portalId: string, clientId: string, disa
   revalidatePath(`/clients/${clientId}`);
 }
 
-export async function resetPortalSelection(portalId: string, clientId: string) {
+// Returns { error } instead of throwing — see the matching comment on
+// deleteTemplate in templates.ts: a thrown Server Action error gets its
+// message redacted in production, so this must return it instead.
+export async function resetPortalSelection(
+  portalId: string,
+  clientId: string
+): Promise<{ error: string } | undefined> {
   const authError = await requireAdmin();
-  if (authError) throw new Error(authError);
+  if (authError) return { error: authError };
 
   const [portal, client] = await Promise.all([
     db.portal.findUnique({ where: { id: portalId } }),
     db.client.findUnique({ where: { id: clientId } }),
   ]);
-  if (!portal) throw new Error("Portal not found.");
+  if (!portal) return { error: "Portal not found." };
 
   await db.$transaction([
     db.templateSelection.deleteMany({ where: { portalId } }),

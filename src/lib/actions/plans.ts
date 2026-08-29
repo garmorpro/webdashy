@@ -179,15 +179,21 @@ export async function reorderPlans(orderedPlanIds: string[]) {
   revalidatePath("/p", "layout");
 }
 
-export async function deletePlan(planId: string) {
+// Returns { error } instead of throwing on the expected/validation-failure
+// path — see the matching comment on deleteTemplate in templates.ts for
+// why: Next.js redacts a thrown Server Action error's message in
+// production, so this must return the message for the caller to re-throw
+// client-side instead.
+export async function deletePlan(planId: string): Promise<{ error: string } | undefined> {
   const authError = await requireAdmin();
-  if (authError) throw new Error(authError);
+  if (authError) return { error: authError };
 
   const usedCount = await db.templateSelection.count({ where: { planId } });
   if (usedCount > 0) {
-    throw new Error(
-      "This plan can't be deleted because a client has selected it. Deactivate it instead to hide it from new portals."
-    );
+    return {
+      error:
+        "This plan can't be deleted because a client has selected it. Deactivate it instead to hide it from new portals.",
+    };
   }
 
   await db.plan.delete({ where: { id: planId } });

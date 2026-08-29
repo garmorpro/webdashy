@@ -244,7 +244,10 @@ export function ClientsTable({
         confirmLabel="Delete Client"
         pendingLabel="Deleting..."
         onConfirm={async () => {
-          if (deleteTarget) await deleteClient(deleteTarget.id);
+          if (deleteTarget) {
+            const result = await deleteClient(deleteTarget.id);
+            if (result?.error) throw new Error(result.error);
+          }
         }}
       />
     </>

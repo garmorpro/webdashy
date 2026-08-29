@@ -145,9 +145,12 @@ export async function archiveClient(clientId: string) {
   revalidatePath(`/clients/${clientId}`);
 }
 
-export async function deleteClient(clientId: string) {
+// Returns { error } instead of throwing — see the matching comment on
+// deleteTemplate in templates.ts: a thrown Server Action error gets its
+// message redacted in production, so this must return it instead.
+export async function deleteClient(clientId: string): Promise<{ error: string } | undefined> {
   const authError = await requireAdmin();
-  if (authError) throw new Error(authError);
+  if (authError) return { error: authError };
 
   try {
     // Client -> Portal is onDelete: Cascade, so this also removes any
@@ -155,7 +158,7 @@ export async function deleteClient(clientId: string) {
     await db.client.delete({ where: { id: clientId } });
   } catch (err) {
     console.error("deleteClient failed:", err);
-    throw new Error("Something went wrong deleting the client. Please try again.");
+    return { error: "Something went wrong deleting the client. Please try again." };
   }
 
   revalidatePath("/clients");

@@ -129,7 +129,10 @@ export function PortalSummary({
             title="Reset this client's selection?"
             description="This clears their confirmed template and plan choice so they can pick again. The portal stays active."
             confirmLabel="Reset Selection"
-            onConfirm={() => resetPortalSelection(portalId, clientId)}
+            onConfirm={async () => {
+              const result = await resetPortalSelection(portalId, clientId);
+              if (result?.error) throw new Error(result.error);
+            }}
           />
         </div>
       </div>

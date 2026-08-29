@@ -17,7 +17,10 @@ export function DeleteClientButton({
       title={`Delete ${clientName}?`}
       description="This permanently removes the client and any portals created for them. This can't be undone."
       confirmLabel="Delete Client"
-      onConfirm={() => deleteClient(clientId)}
+      onConfirm={async () => {
+        const result = await deleteClient(clientId);
+        if (result?.error) throw new Error(result.error);
+      }}
       iconOnly={iconOnly}
     />
   );

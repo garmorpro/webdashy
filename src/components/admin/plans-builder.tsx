@@ -336,7 +336,8 @@ export function PlansBuilder({
         pendingLabel="Deleting..."
         onConfirm={async () => {
           if (deleteTarget) {
-            await deletePlan(deleteTarget.id);
+            const result = await deletePlan(deleteTarget.id);
+            if (result?.error) throw new Error(result.error);
             setEditTarget(null);
           }
         }}

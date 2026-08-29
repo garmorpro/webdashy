@@ -64,15 +64,18 @@ export async function movePlanCategory(categoryId: string, direction: "up" | "do
   revalidatePath("/p", "layout");
 }
 
-export async function deletePlanCategory(categoryId: string) {
+// Returns { error } instead of throwing — see the matching comment on
+// deleteTemplate in templates.ts: a thrown Server Action error gets its
+// message redacted in production, so this must return it instead.
+export async function deletePlanCategory(categoryId: string): Promise<{ error: string } | undefined> {
   const authError = await requireAdmin();
-  if (authError) throw new Error(authError);
+  if (authError) return { error: authError };
 
   const usedCount = await db.plan.count({ where: { categoryId } });
   if (usedCount > 0) {
-    throw new Error(
-      "This category is still assigned to a plan — move those plans to a different category first."
-    );
+    return {
+      error: "This category is still assigned to a plan — move those plans to a different category first.",
+    };
   }
 
   await db.planCategory.delete({ where: { id: categoryId } });
