@@ -181,7 +181,7 @@ export function ClientsTable({
                 <TableCell className="text-muted-foreground">{client.industry ?? "—"}</TableCell>
                 <TableCell className="text-muted-foreground">
                   {client.estimatedValue
-                    ? `$${Number(client.estimatedValue).toLocaleString()}`
+                    ? `$${Number(client.estimatedValue).toLocaleString("en-US")}`
                     : "—"}
                 </TableCell>
                 <TableCell className="text-muted-foreground">

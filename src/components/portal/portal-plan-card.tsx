@@ -67,7 +67,12 @@ export function PortalPlanCard({
             featured ? "text-white" : "text-slate-900"
           )}
         >
-          ${Number(plan.price).toLocaleString()}
+          {/* Explicit locale — a bare toLocaleString() can format
+              differently between the server (Node's default locale) and
+              the browser, which is a real hydration-mismatch source for
+              4+ digit prices (e.g. "3800" vs "3,800"). Every other
+              formatter in this app already pins "en-US"; this one didn't. */}
+          ${Number(plan.price).toLocaleString("en-US")}
           <span
             className={cn(
               "ml-1 text-xs font-semibold",

@@ -55,7 +55,7 @@ export function DashboardView({
             <DollarSign className="h-4 w-4" />
           </span>
           <div className="mt-3 text-2xl font-extrabold text-foreground">
-            ${pipelineValue.toLocaleString()}
+            ${pipelineValue.toLocaleString("en-US")}
           </div>
           <div className="text-xs font-semibold text-muted-foreground">pipeline value</div>
         </div>
@@ -64,7 +64,7 @@ export function DashboardView({
             <Check className="h-4 w-4" />
           </span>
           <div className="mt-3 text-2xl font-extrabold text-accent-foreground">
-            ${wonThisMonth.toLocaleString()}
+            ${wonThisMonth.toLocaleString("en-US")}
           </div>
           <div className="text-xs font-semibold text-accent-foreground/80">won this month</div>
         </div>

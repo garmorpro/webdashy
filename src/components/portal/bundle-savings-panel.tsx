@@ -57,7 +57,10 @@ export function BundleSavingsPanel({ bundle }: { bundle: Plan }) {
           <div className="flex items-baseline justify-between gap-4 pt-3.5">
             <span className="text-base font-bold text-slate-900">{bundle.name}</span>
             <span className="shrink-0 text-xl font-extrabold tabular-nums text-slate-900">
-              ${Number(bundle.price).toLocaleString()}
+              {/* Explicit locale — see portal-plan-card.tsx's comment on
+                  the same pattern; a bare toLocaleString() is a real
+                  hydration-mismatch source for 4+ digit prices. */}
+              ${Number(bundle.price).toLocaleString("en-US")}
               {suffix}
             </span>
           </div>

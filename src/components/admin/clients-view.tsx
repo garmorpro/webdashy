@@ -74,7 +74,7 @@ export function ClientsView({
                 <DollarSign className="h-4 w-4" />
               </span>
               <div className="mt-3 text-2xl font-extrabold text-foreground">
-                ${stats.pipelineValue.toLocaleString()}
+                ${stats.pipelineValue.toLocaleString("en-US")}
               </div>
               <div className="text-xs font-semibold text-muted-foreground">pipeline value</div>
             </div>

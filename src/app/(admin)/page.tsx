@@ -61,7 +61,7 @@ async function getDashboardData() {
     const total = inv.lineItems.reduce((sum, li) => sum + Number(li.amount), 0) + Number(inv.taxAmount);
     activity.push({
       clientName: inv.client.businessName,
-      text: `Invoice sent · $${total.toLocaleString()}`,
+      text: `Invoice sent · $${total.toLocaleString("en-US")}`,
       at: inv.sentAt!,
     });
   }
