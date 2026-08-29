@@ -198,45 +198,56 @@ export function PortalGrid({
         </div>
       ) : null}
 
-      <div
-        className={cn(
-          "sticky bottom-4 mt-10 flex items-stretch overflow-hidden rounded-2xl bg-gradient-to-r from-[#1b2951] to-[#26315e] shadow-2xl transition-shadow",
-          canConfirm ? "ring-2 ring-lime-400/60" : "ring-1 ring-white/10"
-        )}
-      >
-        <div className="w-1.5 shrink-0 bg-lime-400" />
-        <div className="flex flex-1 flex-col items-center justify-between gap-4 px-6 py-5 sm:flex-row">
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-7">
-            <div className="text-center sm:text-left">
-              <div className="text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
-                Template
+      {/* `sticky` lives on this plain outer wrapper, with none of the
+          visual styling on it — a `position: sticky` element combined with
+          `overflow: hidden` on the SAME node is a known Chromium repaint
+          trap: a pure content/text update inside it (no accompanying
+          layout change) can fail to visually repaint until some other
+          interaction forces one, even though the underlying DOM/React
+          state updated correctly. Keeping the clipped, rounded, styled box
+          as a plain non-sticky CHILD sidesteps that failure mode
+          entirely. */}
+      <div className="sticky bottom-4 mt-10 will-change-transform">
+        <div
+          className={cn(
+            "flex items-stretch overflow-hidden rounded-2xl bg-gradient-to-r from-[#1b2951] to-[#26315e] shadow-2xl transition-shadow",
+            canConfirm ? "ring-2 ring-lime-400/60" : "ring-1 ring-white/10"
+          )}
+        >
+          <div className="w-1.5 shrink-0 bg-lime-400" />
+          <div className="flex flex-1 flex-col items-center justify-between gap-4 px-6 py-5 sm:flex-row">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-7">
+              <div className="text-center sm:text-left">
+                <div className="text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+                  Template
+                </div>
+                <div className="text-[15px] font-bold text-white">
+                  {selectedTemplate?.name ?? "—"}
+                </div>
               </div>
-              <div className="text-[15px] font-bold text-white">
-                {selectedTemplate?.name ?? "—"}
+              <div className="hidden h-8 w-px bg-white/15 sm:block" />
+              <div className="text-center sm:text-left">
+                <div className="text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
+                  Plan
+                </div>
+                <div className="text-[15px] font-bold text-white">
+                  {selectedPlan ? (
+                    <>
+                      {selectedPlan.name}{" "}
+                      <span className="font-semibold text-slate-400">
+                        ({selectedPlan.billingType === "MONTHLY" ? "Monthly" : "One-Time"})
+                      </span>
+                    </>
+                  ) : (
+                    "—"
+                  )}
+                </div>
               </div>
             </div>
-            <div className="hidden h-8 w-px bg-white/15 sm:block" />
-            <div className="text-center sm:text-left">
-              <div className="text-[10.5px] font-bold uppercase tracking-wide text-slate-400">
-                Plan
-              </div>
-              <div className="text-[15px] font-bold text-white">
-                {selectedPlan ? (
-                  <>
-                    {selectedPlan.name}{" "}
-                    <span className="font-semibold text-slate-400">
-                      ({selectedPlan.billingType === "MONTHLY" ? "Monthly" : "One-Time"})
-                    </span>
-                  </>
-                ) : (
-                  "—"
-                )}
-              </div>
-            </div>
+            <Button disabled={!canConfirm} onClick={() => setConfirmOpen(true)} className="shrink-0">
+              Confirm Selection
+            </Button>
           </div>
-          <Button disabled={!canConfirm} onClick={() => setConfirmOpen(true)} className="shrink-0">
-            Confirm Selection
-          </Button>
         </div>
       </div>
 
