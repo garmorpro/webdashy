@@ -209,6 +209,14 @@ export function PortalGrid({
           entirely. */}
       <div className="sticky bottom-4 mt-10 will-change-transform">
         <div
+          // Forces a full unmount+remount of this whole box whenever the
+          // selection changes, instead of React patching the existing DOM
+          // node's text in place. Belt-and-suspenders on top of the
+          // sticky/overflow split above: whatever the exact browser-paint
+          // mechanism turns out to be, a brand-new DOM node can't possibly
+          // show stale content, since there's no old version of it to be
+          // stale — this doesn't rely on a specific theory being right.
+          key={`${templateId ?? "none"}-${planId ?? "none"}`}
           className={cn(
             "flex items-stretch overflow-hidden rounded-2xl bg-gradient-to-r from-[#1b2951] to-[#26315e] shadow-2xl transition-shadow",
             canConfirm ? "ring-2 ring-lime-400/60" : "ring-1 ring-white/10"
