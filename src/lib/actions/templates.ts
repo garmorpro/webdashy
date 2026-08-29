@@ -9,11 +9,12 @@ import { TemplateStatus } from "@prisma/client";
 
 export type TemplateActionState = { error?: string };
 
-// Caps the template library at one slot per real category the portal
-// tabs/filters are built around (Business, Construction, Ecommerce,
-// Health & Wellness, Local Services, Portfolio, Professional Services,
-// Restaurant) — see the plans-side MAX_PLANS precedent in plans.ts.
-const MAX_TEMPLATES = 8;
+// 8 distinct SEO-template layouts, each rebuilt/reskinned for all 8 real
+// categories (Business, Construction, Ecommerce, Health & Wellness, Local
+// Services, Portfolio, Professional Services, Restaurant) — 8 × 8 = the
+// full planned library. See the plans-side MAX_PLANS precedent in
+// plans.ts for the same kind of cap on that list.
+const MAX_TEMPLATES = 64;
 
 // See clients.ts for why this check has to live in the action itself —
 // proxy.ts's route-based matcher doesn't cover Server Action dispatch.
