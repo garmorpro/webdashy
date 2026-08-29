@@ -22,24 +22,22 @@ const BILLING_TYPE_LABELS: Record<PlanBillingType, string> = {
 // a real string value for its own item; mapped back to null on submit.
 const NO_CATEGORY = "none";
 
-// The mockup replaced three independent toggles (Most popular / Recommended
-// / Bundle) with one clear choice — a plan reads as exactly one of these on
-// the portal anyway (a bundle is always the featured dark card regardless
-// of the other two; Most Popular wins the ribbon over Recommended when
-// both were ever set). The server still stores three independent booleans
-// (see plans.ts) — this control just never lets the admin produce a
-// combination that was already effectively meaningless.
-type CardStyle = "standard" | "popular" | "recommended" | "bundle";
+// Badge and Bundle are two INDEPENDENT axes, not one 4-way choice — a plan
+// can be a Bundle AND Most Popular at once (that's real, live data: the
+// "Website + Reviews" bundle also carries the Most Popular ribbon). What's
+// mutually exclusive is only the badge itself: a plan can't be both
+// Standard and Recommended, or both Most Popular and Recommended — Most
+// Popular wins the ribbon over Recommended if both were ever somehow set.
+// Bundle is a separate toggle underneath, combinable with any badge.
+type Badge = "standard" | "popular" | "recommended";
 
-const CARD_STYLE_LABELS: Record<CardStyle, string> = {
+const BADGE_LABELS: Record<Badge, string> = {
   standard: "Standard",
   popular: "Most Popular",
   recommended: "Recommended",
-  bundle: "Bundle",
 };
 
-function styleFromPlan(plan: Plan | null): CardStyle {
-  if (plan?.isBundle) return "bundle";
+function badgeFromPlan(plan: Plan | null): Badge {
   if (plan?.isPopular) return "popular";
   if (plan?.isRecommended) return "recommended";
   return "standard";
@@ -51,6 +49,43 @@ function SubmitButton({ label }: { label: string }) {
     <Button type="submit" disabled={pending} className="flex-1">
       {pending ? "Saving..." : label}
     </Button>
+  );
+}
+
+/** Matches PortalPricingToggle's exact button+span markup — a plain boolean
+ * switch, submitted via a hidden input since the rest of this form is
+ * native FormData rather than controlled state. */
+function ToggleField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl bg-secondary px-3 py-2.5">
+      <span className="text-sm font-bold text-foreground">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={label}
+        onClick={() => onChange(!checked)}
+        className={cn(
+          "inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors",
+          checked ? "bg-primary" : "bg-border"
+        )}
+      >
+        <span
+          className={cn(
+            "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
+            checked ? "translate-x-[18px]" : "translate-x-0.5"
+          )}
+        />
+      </button>
+    </div>
   );
 }
 
@@ -77,7 +112,8 @@ export function PlanCardEditor({
 }) {
   const action = plan ? updatePlan.bind(null, plan.id) : createPlan;
   const [state, formAction] = useActionState(action, {});
-  const [cardStyle, setCardStyle] = useState<CardStyle>(styleFromPlan(plan));
+  const [badge, setBadge] = useState<Badge>(badgeFromPlan(plan));
+  const [isBundle, setIsBundle] = useState(plan?.isBundle ?? false);
   const [billingType, setBillingType] = useState<PlanBillingType>(
     plan?.billingType ?? defaultBillingType
   );
@@ -92,8 +128,6 @@ export function PlanCardEditor({
     setLastState(state);
     if (state?.success) onSaved();
   }
-
-  const isBundle = cardStyle === "bundle";
 
   async function toggleActive() {
     if (!plan) return;
@@ -196,37 +230,39 @@ export function PlanCardEditor({
           </div>
 
           <div className="space-y-1.5">
-            <Label>Card style</Label>
-            <input type="hidden" name="isPopular" value={cardStyle === "popular" ? "true" : "false"} />
+            <Label>Badge</Label>
+            <input type="hidden" name="isPopular" value={badge === "popular" ? "true" : "false"} />
             <input
               type="hidden"
               name="isRecommended"
-              value={cardStyle === "recommended" ? "true" : "false"}
+              value={badge === "recommended" ? "true" : "false"}
             />
-            <input type="hidden" name="isBundle" value={cardStyle === "bundle" ? "true" : "false"} />
-            <div className="grid grid-cols-4 gap-1">
-              {(Object.keys(CARD_STYLE_LABELS) as CardStyle[]).map((style) => (
+            <div className="grid grid-cols-3 gap-1">
+              {(Object.keys(BADGE_LABELS) as Badge[]).map((option) => (
                 <button
-                  key={style}
+                  key={option}
                   type="button"
-                  onClick={() => setCardStyle(style)}
+                  onClick={() => setBadge(option)}
                   className={cn(
                     "rounded-lg px-1 py-2 text-[11px] font-bold transition-colors",
-                    cardStyle === style
+                    badge === option
                       ? "bg-[#1b2951] text-white"
                       : "bg-secondary text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {CARD_STYLE_LABELS[style]}
+                  {BADGE_LABELS[option]}
                 </button>
               ))}
             </div>
-            {isBundle ? (
-              <p className="text-xs text-muted-foreground">
-                A bundle is always the featured dark card on the portal.
-              </p>
-            ) : null}
           </div>
+
+          <input type="hidden" name="isBundle" value={isBundle ? "true" : "false"} />
+          <ToggleField label="Is this a bundle?" checked={isBundle} onChange={setIsBundle} />
+          {isBundle ? (
+            <p className="-mt-2.5 text-xs text-muted-foreground">
+              A bundle is always the featured dark card, on top of whatever badge is set above.
+            </p>
+          ) : null}
 
           {isBundle ? (
             <div className="space-y-4 rounded-xl border border-border p-3">
