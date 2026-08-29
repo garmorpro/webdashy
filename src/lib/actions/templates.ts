@@ -9,6 +9,12 @@ import { TemplateStatus } from "@prisma/client";
 
 export type TemplateActionState = { error?: string };
 
+// Caps the template library at one slot per real category the portal
+// tabs/filters are built around (Business, Construction, Ecommerce,
+// Health & Wellness, Local Services, Portfolio, Professional Services,
+// Restaurant) — see the plans-side MAX_PLANS precedent in plans.ts.
+const MAX_TEMPLATES = 8;
+
 // See clients.ts for why this check has to live in the action itself —
 // proxy.ts's route-based matcher doesn't cover Server Action dispatch.
 async function requireAdmin(): Promise<string | null> {
@@ -77,6 +83,13 @@ export async function createTemplate(
   const existing = await db.template.findUnique({ where: { slug } });
   if (existing) {
     return { error: `Slug "${slug}" is already in use by another template. Choose a different name or slug.` };
+  }
+
+  const existingCount = await db.template.count();
+  if (existingCount >= MAX_TEMPLATES) {
+    return {
+      error: `You can have at most ${MAX_TEMPLATES} templates. Archive or delete one first.`,
+    };
   }
 
   let created;
