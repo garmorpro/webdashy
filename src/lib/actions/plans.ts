@@ -49,6 +49,7 @@ function readPlanFields(formData: FormData) {
     bundleWhyText: get("bundleWhyText") || null,
     bundleLines: parseFeatures(get("bundleLines")),
     bundleSavingsText: get("bundleSavingsText") || null,
+    bundleFooterText: get("bundleFooterText") || null,
   };
 }
 
@@ -92,6 +93,7 @@ export async function createPlan(
         bundleWhyText: fields.isBundle ? fields.bundleWhyText : null,
         bundleLines: fields.isBundle ? fields.bundleLines : [],
         bundleSavingsText: fields.isBundle ? fields.bundleSavingsText : null,
+        bundleFooterText: fields.isBundle ? fields.bundleFooterText : null,
       },
     });
   } catch (err) {
@@ -136,6 +138,7 @@ export async function updatePlan(
         bundleWhyText: fields.isBundle ? fields.bundleWhyText : null,
         bundleLines: fields.isBundle ? fields.bundleLines : [],
         bundleSavingsText: fields.isBundle ? fields.bundleSavingsText : null,
+        bundleFooterText: fields.isBundle ? fields.bundleFooterText : null,
       },
     });
   } catch (err) {
@@ -157,32 +160,23 @@ export async function togglePlanActive(planId: string, isActive: boolean) {
   revalidatePath("/p", "layout");
 }
 
-export async function movePlan(planId: string, direction: "up" | "down") {
+// Replaces the old up/down movePlan swap — the builder reorders plans by
+// dragging a card, which produces a whole new order in one gesture rather
+// than a single up/down step. orderedPlanIds is the complete new order for
+// one group (e.g. "Monthly plans on the Websites tab"); every id in it gets
+// its displayOrder set to its index. Plans outside that group are untouched.
+export async function reorderPlans(orderedPlanIds: string[]) {
   const authError = await requireAdmin();
   if (authError) throw new Error(authError);
+  if (orderedPlanIds.length === 0) return;
 
-  const target = await db.plan.findUnique({ where: { id: planId } });
-  if (!target) return;
-
-  // Scoped to the same billingType — the Settings UI now renders Monthly
-  // and One-Time plans as two separate lists (see plans-manager.tsx), so
-  // reordering must stay within whichever list the admin is looking at
-  // rather than reaching across into the other one.
-  const plans = await db.plan.findMany({
-    where: { billingType: target.billingType },
-    orderBy: { displayOrder: "asc" },
-  });
-  const index = plans.findIndex((p) => p.id === planId);
-  const swapWith = direction === "up" ? index - 1 : index + 1;
-  if (index === -1 || swapWith < 0 || swapWith >= plans.length) return;
-
-  const a = plans[index];
-  const b = plans[swapWith];
-  await db.$transaction([
-    db.plan.update({ where: { id: a.id }, data: { displayOrder: b.displayOrder } }),
-    db.plan.update({ where: { id: b.id }, data: { displayOrder: a.displayOrder } }),
-  ]);
+  await db.$transaction(
+    orderedPlanIds.map((id, index) =>
+      db.plan.update({ where: { id }, data: { displayOrder: index } })
+    )
+  );
   revalidatePath("/settings");
+  revalidatePath("/p", "layout");
 }
 
 export async function deletePlan(planId: string) {

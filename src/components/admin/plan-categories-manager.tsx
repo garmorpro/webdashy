@@ -16,7 +16,7 @@ import type { PlanCategory } from "@prisma/client";
 /**
  * Manages the tabs clients see on the portal (e.g. "Websites" / "Reviews" /
  * "Website + Reviews") — deliberately lightweight (name + order only)
- * compared to PlansManager, since a category is just a label and a
+ * compared to PlansBuilder, since a category is just a label and a
  * position, not a pricing tier with its own fields.
  */
 export function PlanCategoriesManager({ categories }: { categories: PlanCategory[] }) {

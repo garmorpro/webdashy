@@ -73,7 +73,7 @@ export async function togglePortalPricingVisibility(showPricingInPortal: boolean
 
 // Split out from updateAppSettings for the same reason as
 // togglePortalPricingVisibility above — this is edited from inside
-// PlansManager (right above the One-Time Options section), and a full-form
+// PlansBuilder (right above the One-Time Options section), and a full-form
 // upsert from that save would null out Invoice Details.
 export async function updateOneTimeFooterNote(text: string) {
   const authError = await requireAdmin();

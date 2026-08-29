@@ -316,6 +316,9 @@ model Plan {
   // The highlighted savings callout, e.g. "You save $57/month" — typed
   // verbatim, not calculated.
   bundleSavingsText String?
+  // Optional closing line under the panel, e.g. "Just want a website?
+  // Head to the Websites tab — no reviews, no problem."
+  bundleFooterText  String?
 
   @@index([isActive])
   @@index([categoryId])

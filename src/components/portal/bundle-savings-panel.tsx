@@ -17,7 +17,10 @@ function splitLine(line: string): [string, string | null] {
  * record, so at least that half can never go stale. */
 export function BundleSavingsPanel({ bundle }: { bundle: Plan }) {
   const hasContent = Boolean(
-    bundle.bundleWhyText?.trim() || bundle.bundleLines.length > 0 || bundle.bundleSavingsText?.trim()
+    bundle.bundleWhyText?.trim() ||
+      bundle.bundleLines.length > 0 ||
+      bundle.bundleSavingsText?.trim() ||
+      bundle.bundleFooterText?.trim()
   );
   if (!hasContent) return null;
 
@@ -66,6 +69,10 @@ export function BundleSavingsPanel({ bundle }: { bundle: Plan }) {
           <Check className="h-4 w-4 shrink-0 text-lime-700" />
           <p className="text-[15px] font-bold text-lime-800">{bundle.bundleSavingsText}</p>
         </div>
+      ) : null}
+
+      {bundle.bundleFooterText?.trim() ? (
+        <p className="mt-4 text-[13px] leading-relaxed text-slate-400">{bundle.bundleFooterText}</p>
       ) : null}
     </div>
   );

@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { ProfileForm } from "@/components/admin/profile-form";
 import { PortalPricingToggle } from "@/components/admin/portal-pricing-toggle";
 import { PlanCategoriesManager } from "@/components/admin/plan-categories-manager";
-import { PlansManager } from "@/components/admin/plans-manager";
+import { PlansBuilder } from "@/components/admin/plans-builder";
 import { InvoiceSettingsForm } from "@/components/admin/invoice-settings-form";
 import { ApiAccessSection } from "@/components/admin/api-access-section";
 
@@ -39,7 +39,7 @@ export default async function SettingsPage() {
           </div>
           <div className="mt-5">
             <PlanCategoriesManager categories={planCategories} />
-            <PlansManager
+            <PlansBuilder
               plans={plans}
               categories={planCategories}
               oneTimeFooterNote={settings.oneTimeFooterNote}
