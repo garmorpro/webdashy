@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { sendReviewOutcomeNotification } from "@/lib/mail";
-import { transitionClientWorkflow } from "@/lib/services/client-workflow";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
+import { synchronizeLaunchHandoffReadiness } from "@/lib/project-completion";
 
 export type ReviewActionState = { error?: string };
 
@@ -35,7 +36,7 @@ export async function approveDelivery(reviewToken: string): Promise<ReviewAction
         where: { id: delivery.id },
         data: { reviewStatus: "APPROVED", reviewFeedback: null, reviewedAt: now },
       });
-      await transitionClientWorkflow(delivery.portal.clientId, "REVISIONS_APPROVED", tx);
+      await advanceClientWorkflow(delivery.portal.clientId, "REVISIONS_APPROVED", tx);
     });
   } catch (err) {
     console.error("approveDelivery failed:", err);
@@ -43,6 +44,7 @@ export async function approveDelivery(reviewToken: string): Promise<ReviewAction
   }
   revalidatePath(`/r/${reviewToken}`);
   revalidatePath(`/clients/${delivery.portal.clientId}`);
+  await synchronizeLaunchHandoffReadiness(delivery.portal.clientId, delivery.portalId);
   await sendReviewOutcomeNotification({
     clientName: delivery.portal.client.businessName,
     approved: true,

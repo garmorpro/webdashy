@@ -1,29 +1,30 @@
 import { db } from "@/lib/db";
 import { advanceClientWorkflow } from "@/lib/services/client-workflow";
+import { isLaunchHandoffReady } from "@/lib/services/launch-handoff-readiness-state.mjs";
 
 /**
- * A project is "complete" (Client.status → WON) once both halves of step 8
- * are true: the client approved the delivered site AND every invoice tied
- * to that portal is paid. Either half can happen first — marking an
- * invoice paid, or the client approving — so both call sites (invoices.ts'
- * markInvoicePaid and the public approveDelivery action) check this after
- * their own write, and this is idempotent (a no-op once already WON).
+ * Synchronizes the canonical workflow once the client has approved the site
+ * and every invoice for this project is paid. Those facts make the project
+ * eligible for Launch & Handoff; they do not complete the project and must
+ * never set the legacy status to WON or advance directly to Client Care.
  */
-export async function maybeCompleteProject(clientId: string, portalId: string): Promise<void> {
-  const [client, delivery, unpaidCount] = await Promise.all([
-    db.client.findUnique({ where: { id: clientId } }),
-    db.delivery.findUnique({ where: { portalId } }),
+export async function synchronizeLaunchHandoffReadiness(
+  clientId: string,
+  portalId: string
+): Promise<void> {
+  const [portal, delivery, invoiceCount, unpaidInvoiceCount] = await Promise.all([
+    db.portal.findFirst({ where: { id: portalId, clientId }, select: { id: true } }),
+    db.delivery.findUnique({ where: { portalId }, select: { reviewStatus: true } }),
+    db.invoice.count({ where: { portalId } }),
     db.invoice.count({ where: { portalId, status: { not: "PAID" } } }),
   ]);
 
-  if (!client) return;
-  if (delivery?.status !== "DELIVERED" || delivery.reviewStatus !== "APPROVED") return;
-  if (unpaidCount > 0) return;
+  if (!portal) return;
+  if (!isLaunchHandoffReady({
+    reviewApproved: delivery?.reviewStatus === "APPROVED",
+    invoiceCount,
+    unpaidInvoiceCount,
+  })) return;
 
-  await db.$transaction(async (tx) => {
-    if (client.status !== "WON") {
-      await tx.client.update({ where: { id: clientId }, data: { status: "WON" } });
-    }
-    await advanceClientWorkflow(clientId, "CLIENT_CARE", tx);
-  });
+  await advanceClientWorkflow(clientId, "PAYMENT_RECEIVED");
 }

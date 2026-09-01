@@ -28,7 +28,12 @@ model User {
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
 
-  confirmedBuildSetups BuildSetup[]
+  confirmedBuildSetups           BuildSetup[]
+  publishedHandoffRevisions      HandoffTemplateRevision[] @relation("HandoffRevisionPublisher")
+  completedHandoffPackets        HandoffPacket[]           @relation("HandoffPacketCompleter")
+  completedHandoffChecklistItems HandoffChecklistItem[]    @relation("HandoffChecklistCompleter")
+  confirmedClientCareEnrollments ClientCareEnrollment[]    @relation("ClientCareConfirmer")
+  projectAuditEvents             ProjectAuditEvent[]       @relation("ProjectAuditActor")
 }
 
 // --- Template Library ---
@@ -147,9 +152,12 @@ model Client {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  portals       Portal[]
-  invoices      Invoice[]
-  questionnaire DesignQuestionnaire?
+  portals               Portal[]
+  invoices              Invoice[]
+  questionnaire         DesignQuestionnaire?
+  handoffPackets        HandoffPacket[]
+  clientCareEnrollments ClientCareEnrollment[]
+  projectAuditEvents    ProjectAuditEvent[]
 
   @@index([status])
   @@index([workflowStage])
@@ -209,13 +217,16 @@ model Portal {
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
-  templates    PortalTemplate[]
-  events       PortalEvent[]
-  selection    TemplateSelection?
-  requirements ProjectRequirements?
-  buildSetup   BuildSetup?
-  delivery     Delivery?
-  invoices     Invoice[]
+  templates            PortalTemplate[]
+  events               PortalEvent[]
+  selection            TemplateSelection?
+  requirements         ProjectRequirements?
+  buildSetup           BuildSetup?
+  delivery             Delivery?
+  invoices             Invoice[]
+  handoffPackets       HandoffPacket[]
+  clientCareEnrollment ClientCareEnrollment?
+  projectAuditEvents   ProjectAuditEvent[]
 
   @@index([clientId])
   @@index([token])
@@ -650,4 +661,252 @@ model DeliveryReview {
 
   @@unique([deliveryId, cycle])
   @@index([deliveryId, sentAt])
+}
+
+// --- Launch & Handoff ---
+
+enum HandoffTemplateRevisionStatus {
+  DRAFT
+  PUBLISHED
+  RETIRED
+}
+
+enum HandoffPacketStatus {
+  DRAFT
+  ISSUED
+  SENT
+  VIEWED
+  ACCEPTED
+  COMPLETED
+  SUPERSEDED
+  REVOKED
+}
+
+enum HandoffEmailStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  DELIVERY_UNKNOWN
+}
+
+enum HandoffEmailKind {
+  INITIAL
+  RESEND
+  ACCEPTED_COPY
+}
+
+enum HandoffChecklistStatus {
+  PENDING
+  COMPLETED
+  WAIVED
+  NOT_APPLICABLE
+}
+
+enum ClientCareDisposition {
+  ENROLLED
+  DECLINED
+  INCLUDED
+  NOT_APPLICABLE
+}
+
+enum ProjectAuditActorType {
+  ADMIN
+  CLIENT_TOKEN
+  SYSTEM
+}
+
+model HandoffTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  revisions HandoffTemplateRevision[]
+}
+
+model HandoffTemplateRevision {
+  id                String                        @id @default(cuid())
+  templateId        String
+  revision          Int
+  status            HandoffTemplateRevisionStatus @default(DRAFT)
+  schemaVersion     Int                           @default(1)
+  sections          Json
+  acceptanceText    String
+  contentHash       String?
+  publishedAt       DateTime?
+  publishedByUserId String?
+  createdAt         DateTime                      @default(now())
+  updatedAt         DateTime                      @updatedAt
+
+  template    HandoffTemplate @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  publishedBy User?           @relation("HandoffRevisionPublisher", fields: [publishedByUserId], references: [id], onDelete: SetNull)
+  packets     HandoffPacket[]
+
+  @@unique([templateId, revision])
+  @@index([status])
+  @@index([publishedByUserId])
+}
+
+model HandoffPacket {
+  id                    String              @id @default(cuid())
+  portalId              String
+  clientId              String
+  templateRevisionId    String
+  version               Int
+  status                HandoffPacketStatus @default(DRAFT)
+  recipientName         String
+  recipientEmail        String
+  draftData             Json
+  snapshot              Json?
+  snapshotSchemaVersion Int                 @default(1)
+  snapshotHash          String?
+  publicTokenHash       String?             @unique
+  tokenPreview          String?
+  tokenExpiresAt        DateTime?
+  tokenRevokedAt        DateTime?
+  issuedAt              DateTime?
+  firstSentAt           DateTime?
+  lastSentAt            DateTime?
+  firstViewedAt         DateTime?
+  lastViewedAt          DateTime?
+  viewCount             Int                 @default(0)
+  completedAt           DateTime?
+  completedByUserId     String?
+  supersededById        String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  portal           Portal                  @relation(fields: [portalId], references: [id], onDelete: Restrict)
+  client           Client                  @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  templateRevision HandoffTemplateRevision @relation(fields: [templateRevisionId], references: [id], onDelete: Restrict)
+  completedBy      User?                   @relation("HandoffPacketCompleter", fields: [completedByUserId], references: [id], onDelete: SetNull)
+  supersededBy     HandoffPacket?          @relation("HandoffPacketSupersession", fields: [supersededById], references: [id], onDelete: SetNull)
+  supersedes       HandoffPacket[]         @relation("HandoffPacketSupersession")
+  acceptance       HandoffAcceptance?
+  checklistItems   HandoffChecklistItem[]
+  emailAttempts    HandoffEmailAttempt[]
+  auditEvents      ProjectAuditEvent[]
+
+  @@unique([portalId, version])
+  @@index([clientId])
+  @@index([templateRevisionId])
+  @@index([status])
+  @@index([completedByUserId])
+  @@index([supersededById])
+}
+
+model HandoffAcceptance {
+  id                      String   @id @default(cuid())
+  packetId                String   @unique
+  typedName               String
+  signerTitle             String?
+  authorityConfirmed      Boolean  @default(false)
+  acknowledgmentConfirmed Boolean
+  acknowledgmentText      String
+  packetSnapshotHash      String
+  acceptedAt              DateTime
+  submissionKey           String   @unique
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  packet HandoffPacket @relation(fields: [packetId], references: [id], onDelete: Restrict)
+}
+
+model HandoffChecklistItem {
+  id                String                 @id @default(cuid())
+  packetId          String
+  key               String
+  label             String
+  category          String
+  required          Boolean                @default(false)
+  status            HandoffChecklistStatus @default(PENDING)
+  note              String?
+  completedAt       DateTime?
+  completedByUserId String?
+  displayOrder      Int                    @default(0)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  packet      HandoffPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
+  completedBy User?         @relation("HandoffChecklistCompleter", fields: [completedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([packetId, key])
+  @@index([packetId, displayOrder])
+  @@index([completedByUserId])
+}
+
+model HandoffEmailAttempt {
+  id                String             @id @default(cuid())
+  packetId          String
+  recipientEmail    String
+  status            HandoffEmailStatus @default(PENDING)
+  kind              HandoffEmailKind
+  idempotencyKey    String             @unique
+  providerMessageId String?
+  attemptedAt       DateTime
+  sentAt            DateTime?
+  errorCode         String?
+  errorMessage      String?
+  snapshotHash      String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  packet HandoffPacket @relation(fields: [packetId], references: [id], onDelete: Cascade)
+
+  @@index([packetId, attemptedAt])
+  @@index([status])
+}
+
+model ClientCareEnrollment {
+  id                    String                @id @default(cuid())
+  portalId              String                @unique
+  clientId              String
+  disposition           ClientCareDisposition
+  planNameSnapshot      String?
+  monthlyAmountSnapshot Decimal?              @db.Decimal(10, 2)
+  startsAt              DateTime?
+  endsAt                DateTime?
+  warrantyStartsAt      DateTime?
+  warrantyEndsAt        DateTime?
+  supportEmail          String?
+  responseExpectation   String?
+  notes                 String?
+  confirmedAt           DateTime?
+  confirmedByUserId     String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  portal      Portal @relation(fields: [portalId], references: [id], onDelete: Restrict)
+  client      Client @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  confirmedBy User?  @relation("ClientCareConfirmer", fields: [confirmedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([clientId])
+  @@index([disposition])
+  @@index([confirmedByUserId])
+}
+
+model ProjectAuditEvent {
+  id          String                @id @default(cuid())
+  clientId    String
+  portalId    String?
+  packetId    String?
+  actorType   ProjectAuditActorType
+  actorUserId String?
+  eventType   String
+  metadata    Json?
+  createdAt   DateTime              @default(now())
+
+  client    Client         @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  portal    Portal?        @relation(fields: [portalId], references: [id], onDelete: SetNull)
+  packet    HandoffPacket? @relation(fields: [packetId], references: [id], onDelete: SetNull)
+  actorUser User?          @relation("ProjectAuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([clientId, createdAt])
+  @@index([portalId, createdAt])
+  @@index([packetId, createdAt])
+  @@index([actorUserId])
+  @@index([eventType])
 }

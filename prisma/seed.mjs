@@ -1,5 +1,5 @@
-// Seeds reference data (categories) and the admin user from env vars.
-// Never seeds fake business data like templates or clients.
+// Seeds reference data and the admin user from env vars.
+// Never seeds fake client or project data.
 // Run with `npm run db:seed`.
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
@@ -18,6 +18,32 @@ const categories = [
   "Professional Services",
   "Other",
 ];
+
+const HANDOFF_TEMPLATE_SLUG = "webdashy-default-handoff";
+const HANDOFF_PLACEHOLDER_DESCRIPTION =
+  "Counsel-reviewed language to be added before production use.";
+const handoffSections = [
+  ["project_summary", "Project Summary"],
+  ["website_launch", "Website Launch"],
+  ["domain", "Domain"],
+  ["hosting", "Hosting"],
+  ["source_code", "Source Code"],
+  ["access_handoff", "Access Handoff"],
+  ["ownership", "Ownership"],
+  ["third_party_services", "Third-Party Services"],
+  ["maintenance_support", "Maintenance & Support"],
+  ["warranty", "Warranty"],
+  ["operational_responsibilities", "Operational Responsibilities"],
+  ["privacy_data_compliance", "Privacy, Data & Compliance"],
+  ["acceptance", "Acceptance"],
+].map(([id, heading]) => ({
+  id,
+  heading,
+  description: HANDOFF_PLACEHOLDER_DESCRIPTION,
+}));
+
+const handoffAcceptancePlaceholder =
+  "PLACEHOLDER ONLY — production acceptance wording requires counsel and business review before use.";
 
 function slugify(input) {
   return input
@@ -76,10 +102,43 @@ async function seedAppSettings() {
   console.log("Seeded app settings.");
 }
 
+async function seedDefaultHandoffTemplate() {
+  const template = await db.handoffTemplate.upsert({
+    where: { slug: HANDOFF_TEMPLATE_SLUG },
+    update: { name: "WebDashy Default Handoff", isDefault: true },
+    create: {
+      name: "WebDashy Default Handoff",
+      slug: HANDOFF_TEMPLATE_SLUG,
+      isDefault: true,
+    },
+  });
+
+  await db.handoffTemplateRevision.upsert({
+    where: { templateId_revision: { templateId: template.id, revision: 1 } },
+    update: {
+      status: "DRAFT",
+      schemaVersion: 1,
+      sections: handoffSections,
+      acceptanceText: handoffAcceptancePlaceholder,
+    },
+    create: {
+      templateId: template.id,
+      revision: 1,
+      status: "DRAFT",
+      schemaVersion: 1,
+      sections: handoffSections,
+      acceptanceText: handoffAcceptancePlaceholder,
+    },
+  });
+
+  console.log("Seeded default handoff template with a non-legal draft revision.");
+}
+
 async function main() {
   await seedCategories();
   await seedAdminUser();
   await seedAppSettings();
+  await seedDefaultHandoffTemplate();
 }
 
 main()

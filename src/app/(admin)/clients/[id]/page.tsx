@@ -124,12 +124,12 @@ export default async function ClientDetailPage({
       </div>
 
       <div className="space-y-6">
-        {client.status === "WON" ? (
+        {client.workflowStage === "PAYMENT_RECEIVED" ? (
           <div className="rounded-xl border border-emerald-500/25 bg-emerald-50 px-6 py-6 text-center">
             <PartyPopper className="mx-auto h-7 w-7 text-emerald-600" />
-            <h2 className="mt-2 text-lg font-semibold text-emerald-700">Project Complete</h2>
+            <h2 className="mt-2 text-lg font-semibold text-emerald-700">Ready for Launch &amp; Handoff</h2>
             <p className="mt-1 text-sm text-emerald-700/80">
-              {client.businessName} approved their site and final payment has been collected.
+              {client.businessName} approved their site and all project invoices are paid.
             </p>
           </div>
         ) : null}
