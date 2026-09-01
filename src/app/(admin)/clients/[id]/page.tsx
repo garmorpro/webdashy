@@ -105,7 +105,7 @@ export default async function ClientDetailPage({
       </div>
 
       <div className="mb-6">
-        <ClientStepper status={client.status} />
+        <ClientStepper workflowStage={client.workflowStage} />
       </div>
 
       <div className="space-y-6">

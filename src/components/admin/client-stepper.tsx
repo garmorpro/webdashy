@@ -2,8 +2,25 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { PIPELINE_STEPS, pipelineStepIndex, anchorForPipelineStep } from "@/lib/client-status";
-import type { ClientStatus } from "@prisma/client";
+import { WORKFLOW_STAGES, workflowStageIndex } from "@/lib/workflow";
+import type { WorkflowStage } from "@prisma/client";
+
+const WORKFLOW_STAGE_ANCHORS: Record<WorkflowStage, string> = {
+  ADD_LEAD: "contact",
+  CONTACT: "contact",
+  QUESTIONNAIRE_SENT: "questionnaire",
+  QUESTIONNAIRE_COMPLETE: "questionnaire",
+  PORTAL_SENT: "portal",
+  TEMPLATE_AND_PLAN: "portal",
+  BUILD_SETUP: "delivery",
+  WEBSITE_DRAFT: "delivery",
+  CLIENT_REVIEW: "delivery",
+  REVISIONS_APPROVED: "delivery",
+  INVOICE: "invoice",
+  PAYMENT_RECEIVED: "invoice",
+  LAUNCH_AND_HANDOFF: "delivery",
+  CLIENT_CARE: "delivery",
+};
 
 function scrollToAnchor(anchorId: string) {
   // "instant" rather than "smooth" — this scrolls the whole page (not a
@@ -17,23 +34,23 @@ function scrollToAnchor(anchorId: string) {
 
 /**
  * Every step is clickable — this is pure navigation (jump to the matching
- * workflow card further down the page, see anchorForPipelineStep), not a
+ * workflow card further down the page), not a
  * status change. An earlier version of this let a click on a past step
  * revert the client's status; that was the wrong read of what "click on a
  * previous item" should do here, so it's gone — clicking never mutates
  * anything now, for any step.
  */
-export function ClientStepper({ status }: { status: ClientStatus }) {
-  const current = pipelineStepIndex(status);
+export function ClientStepper({ workflowStage }: { workflowStage: WorkflowStage }) {
+  const current = workflowStageIndex(workflowStage);
 
   return (
     <div className="rounded-3xl bg-card p-6">
       <div className="flex items-start gap-0 overflow-x-auto">
-        {PIPELINE_STEPS.map((label, i) => {
+        {WORKFLOW_STAGES.map(({ key, label }, i) => {
           const done = i < current;
           const isCurrent = i === current;
           return (
-            <div key={label} className="relative flex min-w-[90px] flex-col items-center gap-2">
+            <div key={key} className="relative flex min-w-[90px] flex-col items-center gap-2">
               {i > 0 ? (
                 <div
                   className={cn(
@@ -44,7 +61,7 @@ export function ClientStepper({ status }: { status: ClientStatus }) {
               ) : null}
               <button
                 type="button"
-                onClick={() => scrollToAnchor(anchorForPipelineStep(i))}
+                onClick={() => scrollToAnchor(WORKFLOW_STAGE_ANCHORS[key])}
                 title={`Jump to ${label}`}
                 className={cn(
                   "z-10 flex h-[34px] w-[34px] cursor-pointer items-center justify-center rounded-full text-xs font-extrabold transition-transform hover:scale-110",
