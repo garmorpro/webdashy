@@ -27,6 +27,8 @@ model User {
   resetTokenExpiresAt DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt
+
+  confirmedBuildSetups BuildSetup[]
 }
 
 // --- Template Library ---
@@ -58,6 +60,7 @@ model Template {
   portalTemplates PortalTemplate[]
   portalEvents    PortalEvent[]
   selections      TemplateSelection[]
+  buildSetups     BuildSetup[]
 
   @@index([categoryId])
   @@index([status])
@@ -180,6 +183,7 @@ model DesignQuestionnaire {
   submittedAt DateTime?
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
+  buildSetups BuildSetup[]
 }
 
 // --- Portals ---
@@ -209,6 +213,7 @@ model Portal {
   events       PortalEvent[]
   selection    TemplateSelection?
   requirements ProjectRequirements?
+  buildSetup   BuildSetup?
   delivery     Delivery?
   invoices     Invoice[]
 
@@ -260,9 +265,10 @@ model TemplateSelection {
   planId     String?
   selectedAt DateTime @default(now())
 
-  portal   Portal   @relation(fields: [portalId], references: [id], onDelete: Cascade)
-  template Template @relation(fields: [templateId], references: [id])
-  plan     Plan?    @relation(fields: [planId], references: [id])
+  portal      Portal       @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  template    Template     @relation(fields: [templateId], references: [id])
+  plan        Plan?        @relation(fields: [planId], references: [id])
+  buildSetups BuildSetup[]
 
   @@index([templateId])
   @@index([planId])
@@ -319,7 +325,8 @@ model Plan {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  selections TemplateSelection[]
+  selections  TemplateSelection[]
+  buildSetups BuildSetup[]
 
   // "Why bundle?" panel on the client portal — deliberately hand-typed, not
   // computed from other plans (an earlier version linked real component
@@ -390,7 +397,113 @@ model ProjectRequirements {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 
-  portal Portal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  portal      Portal       @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  buildSetups BuildSetup[]
+}
+
+enum BuildSetupStatus {
+  DRAFT
+  CONFIRMED
+}
+
+enum RepositoryVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum WebsiteProvisioningStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  SUCCEEDED
+  FAILED
+  NEEDS_RECONCILIATION
+}
+
+model BuildSetup {
+  id                    String               @id @default(cuid())
+  portalId              String               @unique
+  templateSelectionId   String
+  projectRequirementsId String?
+  questionnaireId       String?
+  status                BuildSetupStatus     @default(DRAFT)
+  generatedAt           DateTime             @default(now())
+  confirmedAt           DateTime?
+  confirmedByUserId     String?
+  projectName           String
+  siteSlug              String
+  repositoryName        String
+  repositoryOwner       String?
+  repositoryVisibility  RepositoryVisibility @default(PRIVATE)
+  sourceRepositoryUrl   String
+  sourceRef             String?
+  primaryDomain         String?
+  existingWebsiteUrl    String?
+  templateId            String
+  templateNameSnapshot  String
+  templateSlugSnapshot  String
+  planId                String?
+  planNameSnapshot      String?
+  planFeaturesSnapshot  String[]
+  businessProfile       Json
+  pages                 Json
+  features              Json
+  contentStatus         ContentStatus
+  contentBrief          Json
+  designBrief           Json
+  targetLaunchDate      DateTime?
+  notes                 String?
+  unresolvedItems       String[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  portal              Portal               @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  templateSelection   TemplateSelection    @relation(fields: [templateSelectionId], references: [id])
+  template            Template             @relation(fields: [templateId], references: [id])
+  plan                Plan?                @relation(fields: [planId], references: [id], onDelete: SetNull)
+  projectRequirements ProjectRequirements? @relation(fields: [projectRequirementsId], references: [id], onDelete: SetNull)
+  questionnaire       DesignQuestionnaire? @relation(fields: [questionnaireId], references: [id], onDelete: SetNull)
+  confirmedByUser     User?                @relation(fields: [confirmedByUserId], references: [id], onDelete: SetNull)
+  websiteProvisioning WebsiteProvisioning?
+
+  @@index([templateSelectionId])
+  @@index([projectRequirementsId])
+  @@index([questionnaireId])
+  @@index([confirmedByUserId])
+  @@index([status])
+}
+
+model WebsiteProvisioning {
+  id                   String                    @id @default(cuid())
+  buildSetupId         String                    @unique
+  status               WebsiteProvisioningStatus @default(NOT_STARTED)
+  sourceOwner          String
+  sourceRepositoryName String
+  sourceRepositoryUrl  String
+  targetOwner          String
+  targetRepositoryName String
+  requestedVisibility  RepositoryVisibility
+  githubRepositoryId   BigInt?
+  githubNodeId         String?
+  repositoryUrl        String?
+  actualVisibility     RepositoryVisibility?
+  defaultBranch        String?
+  attemptCount         Int                       @default(0)
+  lastAttemptAt        DateTime?
+  provisionedAt        DateTime?
+  failedAt             DateTime?
+  lastErrorCode        String?
+  lastErrorMessage     String?
+  githubRequestId      String?
+  startedAt            DateTime?
+  leaseExpiresAt       DateTime?
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  buildSetup BuildSetup @relation(fields: [buildSetupId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([status, leaseExpiresAt])
+  @@index([targetOwner, targetRepositoryName])
 }
 
 // --- Invoicing ---

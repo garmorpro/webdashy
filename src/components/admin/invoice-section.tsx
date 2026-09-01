@@ -232,17 +232,17 @@ export function InvoiceSection({
   invoice: (Invoice & { lineItems: InvoiceLineItem[] }) | null;
   locked: boolean;
 }) {
+  if (invoice) return <ExistingInvoice invoice={invoice} clientId={clientId} />;
+
   if (locked) {
     return (
       <SectionLocked
         title="Invoice"
         icon={FileText}
-        reason="Available once project requirements are saved."
+        reason="Available once the client approves revisions."
       />
     );
   }
-
-  if (invoice) return <ExistingInvoice invoice={invoice} clientId={clientId} />;
 
   return <NewInvoiceForm clientId={clientId} portalId={portalId} />;
 }

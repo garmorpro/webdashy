@@ -9,6 +9,8 @@ import { DeleteClientButton } from "@/components/admin/delete-client-button";
 import { PortalSummary } from "@/components/admin/portal-summary";
 import { ClientStepper } from "@/components/admin/client-stepper";
 import { RequirementsSection } from "@/components/admin/requirements-section";
+import { BuildSetupSection } from "@/components/admin/build-setup-section";
+import { WebsiteProvisioningSection } from "@/components/admin/website-provisioning-section";
 import { InvoiceSection } from "@/components/admin/invoice-section";
 import { DeliverySection } from "@/components/admin/delivery-section";
 import { SectionLocked } from "@/components/admin/section-locked";
@@ -18,6 +20,7 @@ import { updateClient } from "@/lib/actions/clients";
 import { CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLES, pipelineStepIndex } from "@/lib/client-status";
 import { avatarColorsFor, initialsFor } from "@/lib/avatar-colors";
 import { getAbsoluteUrl } from "@/lib/site-url";
+import { isWorkflowStageAtLeast } from "@/lib/workflow";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +42,7 @@ export default async function ClientDetailPage({
           templates: { include: { template: true }, orderBy: { displayOrder: "asc" } },
           selection: { include: { template: true, plan: true } },
           requirements: true,
+          buildSetup: { include: { websiteProvisioning: true } },
           delivery: { include: { reviews: { orderBy: { cycle: "desc" } } } },
           invoices: { orderBy: { createdAt: "desc" }, take: 1, include: { lineItems: true } },
         },
@@ -57,8 +61,12 @@ export default async function ClientDetailPage({
   const latestInvoice = portal?.invoices[0] ?? null;
 
   const requirementsLocked = !portal?.selection;
-  const invoiceLocked = !portal?.requirements;
-  const deliveryLocked = latestInvoice?.status !== "PAID";
+  const buildSetupLocked = !portal?.selection || !portal?.requirements;
+  const invoiceLocked = !isWorkflowStageAtLeast(client.workflowStage, "REVISIONS_APPROVED");
+  const deliveryLocked =
+    !isWorkflowStageAtLeast(client.workflowStage, "BUILD_SETUP") ||
+    portal?.buildSetup?.status !== "CONFIRMED" ||
+    portal?.buildSetup?.websiteProvisioning?.status !== "SUCCEEDED";
   // A portal can't be created until the client's finished the Design
   // Questionnaire — an already-created portal (or a client who reached
   // this stage before the questionnaire feature existed) stays fully
@@ -172,14 +180,19 @@ export default async function ClientDetailPage({
                 requirements={portal.requirements}
                 locked={requirementsLocked}
               />
-            </div>
 
-            <div id="section-invoice">
-              <InvoiceSection
-                clientId={client.id}
+              <BuildSetupSection
                 portalId={portal.id}
-                invoice={latestInvoice}
-                locked={invoiceLocked}
+                clientId={client.id}
+                setup={portal.buildSetup}
+                locked={buildSetupLocked}
+              />
+
+              <WebsiteProvisioningSection
+                portalId={portal.id}
+                clientId={client.id}
+                setup={portal.buildSetup}
+                provisioning={portal.buildSetup?.websiteProvisioning ?? null}
               />
             </div>
 
@@ -191,6 +204,15 @@ export default async function ClientDetailPage({
                 reviewUrl={reviewUrl}
                 workflowStage={client.workflowStage}
                 locked={deliveryLocked}
+              />
+            </div>
+
+            <div id="section-invoice">
+              <InvoiceSection
+                clientId={client.id}
+                portalId={portal.id}
+                invoice={latestInvoice}
+                locked={invoiceLocked}
               />
             </div>
           </>

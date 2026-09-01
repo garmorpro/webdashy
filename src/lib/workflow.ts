@@ -40,6 +40,13 @@ export function workflowStageIndex(stage: WorkflowStage): number {
   return WORKFLOW_STAGE_INDEX.get(stage) ?? -1;
 }
 
+export function isWorkflowStageAtLeast(
+  stage: WorkflowStage,
+  minimumStage: WorkflowStage
+): boolean {
+  return workflowStageIndex(stage) >= workflowStageIndex(minimumStage);
+}
+
 export function workflowStageAtIndex(index: number): WorkflowStage | undefined {
   return WORKFLOW_STAGES[index]?.key;
 }

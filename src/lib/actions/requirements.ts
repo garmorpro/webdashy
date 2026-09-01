@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { ContentStatus } from "@prisma/client";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
 export type RequirementsActionState = { error?: string; success?: string };
 
@@ -31,29 +32,47 @@ export async function saveRequirements(
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
   try {
-    await db.projectRequirements.upsert({
-      where: { portalId },
-      update: {
-        pages,
-        features,
-        contentStatus,
-        targetLaunchDate: targetLaunchDateRaw ? new Date(targetLaunchDateRaw) : null,
-        notes,
-      },
-      create: {
-        portalId,
-        pages,
-        features,
-        contentStatus,
-        targetLaunchDate: targetLaunchDateRaw ? new Date(targetLaunchDateRaw) : null,
-        notes,
-      },
+    await db.$transaction(async (tx) => {
+      const portal = await tx.portal.findFirst({
+        where: { id: portalId, clientId, selection: { isNot: null } },
+        select: { id: true },
+      });
+      if (!portal) throw new Error("PORTAL_NOT_READY");
+
+      await tx.projectRequirements.upsert({
+        where: { portalId },
+        update: {
+          pages,
+          features,
+          contentStatus,
+          targetLaunchDate: targetLaunchDateRaw ? new Date(targetLaunchDateRaw) : null,
+          notes,
+        },
+        create: {
+          portalId,
+          pages,
+          features,
+          contentStatus,
+          targetLaunchDate: targetLaunchDateRaw ? new Date(targetLaunchDateRaw) : null,
+          notes,
+        },
+      });
+
+      // Requirements are the final milestone in the combined Template & Plan
+      // phase. Keep workflowStage canonical and mirror the legacy status only
+      // while it is still at the corresponding legacy stage.
+      await advanceClientWorkflow(clientId, "BUILD_SETUP", tx);
+      await tx.client.updateMany({
+        where: { id: clientId, status: "TEMPLATE_SELECTED" },
+        data: { status: "BUILDING" },
+      });
     });
   } catch (err) {
     console.error("saveRequirements failed:", err);
     return { error: "Something went wrong saving requirements. Please try again." };
   }
 
+  revalidatePath("/clients");
   revalidatePath(`/clients/${clientId}`);
   return { success: "Requirements saved." };
 }

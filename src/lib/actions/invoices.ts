@@ -8,7 +8,7 @@ import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { buildInvoicePdfData } from "@/lib/invoice-pdf-data";
 import { sendInvoiceEmail } from "@/lib/mail";
 import { pipelineStepIndex } from "@/lib/client-status";
-import { workflowStageIndex } from "@/lib/workflow";
+import { isWorkflowStageAtLeast, workflowStageIndex } from "@/lib/workflow";
 import { maybeCompleteProject } from "@/lib/project-completion";
 import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
@@ -59,8 +59,13 @@ export async function createAndSendInvoice(
   const dueDateRaw = String(formData.get("dueDate") ?? "").trim();
   const notes = String(formData.get("notes") ?? "").trim() || null;
 
-  const client = await db.client.findUnique({ where: { id: clientId } });
-  if (!client) return { error: "Client not found." };
+  const client = await db.client.findFirst({
+    where: { id: clientId, portals: { some: { id: portalId } } },
+  });
+  if (!client) return { error: "Client project not found." };
+  if (!isWorkflowStageAtLeast(client.workflowStage, "REVISIONS_APPROVED")) {
+    return { error: "An invoice can only be created after the client approves revisions." };
+  }
 
   const invoiceNumber = await nextInvoiceNumber();
 
@@ -118,9 +123,7 @@ export async function createAndSendInvoice(
   if (pipelineStepIndex("INVOICE_SENT") > pipelineStepIndex(client.status)) {
     await db.client.update({ where: { id: clientId }, data: { status: "INVOICE_SENT" } });
   }
-  if (workflowStageIndex(client.workflowStage) >= workflowStageIndex("REVISIONS_APPROVED")) {
-    await advanceClientWorkflow(clientId, "INVOICE");
-  }
+  await advanceClientWorkflow(clientId, "INVOICE");
 
   revalidatePath(`/clients/${clientId}`);
   return {};
