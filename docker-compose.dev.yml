@@ -25,6 +25,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    volumes:
+      - /home/garrett/.config/webdashy/github-app.pem:/run/secrets/webdashy-github-app.pem:ro
     expose:
       - "3000"
 

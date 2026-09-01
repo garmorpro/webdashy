@@ -38,7 +38,7 @@ function Card({ title, active, children }: { title: string; active?: boolean; ch
 
 function StartBuild({ portalId, clientId }: { portalId: string; clientId: string }) {
   const [pending, startTransition] = useTransition();
-  return <Card title="Build Setup" active><p className="mt-2 text-sm text-muted-foreground">Invoice is paid — ready to start building.</p><Button className="mt-4" disabled={pending} onClick={() => startTransition(async () => { try { await startBuilding(portalId, clientId); } catch { toast.error("Couldn't update this project."); } })}>{pending ? "Starting..." : "Start Building"}</Button></Card>;
+  return <Card title="Build Setup" active><p className="mt-2 text-sm text-muted-foreground">Build Setup is confirmed — ready to start the website draft.</p><Button className="mt-4" disabled={pending} onClick={() => startTransition(async () => { try { await startBuilding(portalId, clientId); } catch { toast.error("Couldn't update this project."); } })}>{pending ? "Starting..." : "Start Building"}</Button></Card>;
 }
 
 function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl }: { portalId: string; clientId: string; delivery: DeliveryWithReviews; workflowStage: WorkflowStage; reviewUrl: string | null }) {
@@ -79,7 +79,7 @@ function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl
 }
 
 export function DeliverySection({ portalId, clientId, delivery, reviewUrl, workflowStage, locked }: { portalId: string; clientId: string; delivery: DeliveryWithReviews | null; reviewUrl: string | null; workflowStage: WorkflowStage; locked: boolean }) {
-  if (locked) return <SectionLocked title="Build & Delivery" icon={Hammer} reason="Available once the invoice is paid." />;
+  if (locked) return <SectionLocked title="Build & Delivery" icon={Hammer} reason="Available once Build Setup is confirmed and website provisioning succeeds." />;
   if (!delivery) return <StartBuild portalId={portalId} clientId={clientId} />;
   return <DraftAndReview portalId={portalId} clientId={clientId} delivery={delivery} workflowStage={workflowStage} reviewUrl={reviewUrl} />;
 }

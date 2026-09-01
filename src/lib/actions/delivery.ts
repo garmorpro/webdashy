@@ -7,6 +7,7 @@ import { generateReviewToken } from "@/lib/tokens";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { sendDeliveryReviewEmail } from "@/lib/mail";
 import { pipelineStepIndex } from "@/lib/client-status";
+import { isWorkflowStageAtLeast } from "@/lib/workflow";
 import {
   advanceClientWorkflow,
   ClientWorkflowTransitionError,
@@ -27,12 +28,31 @@ async function advanceStatus(clientId: string, status: "BUILDING" | "DELIVERED")
   }
 }
 
+async function deliveryEligibilityError(portalId: string, clientId: string): Promise<string | null> {
+  const portal = await db.portal.findFirst({
+    where: { id: portalId, clientId },
+    select: {
+      buildSetup: { select: { status: true, websiteProvisioning: { select: { status: true } } } },
+      client: { select: { workflowStage: true } },
+    },
+  });
+  if (!portal) return "Client project not found.";
+  if (portal.buildSetup?.status !== "CONFIRMED") return "Confirm Build Setup before starting delivery work.";
+  if (portal.buildSetup.websiteProvisioning?.status !== "SUCCEEDED") return "Provision the website repository before starting delivery work.";
+  if (!isWorkflowStageAtLeast(portal.client.workflowStage, "BUILD_SETUP")) {
+    return "This project has not reached Build Setup yet.";
+  }
+  return null;
+}
+
 export async function startBuilding(portalId: string, clientId: string) {
   const authError = await requireAdmin();
   if (authError) throw new Error(authError);
+  const eligibilityError = await deliveryEligibilityError(portalId, clientId);
+  if (eligibilityError) throw new Error(eligibilityError);
   await db.delivery.upsert({
     where: { portalId },
-    update: { status: "BUILDING" },
+    update: {},
     create: { portalId, status: "BUILDING" },
   });
   await advanceStatus(clientId, "BUILDING");
@@ -48,6 +68,8 @@ export async function saveDeliveryUrls(
 ): Promise<DeliveryActionState> {
   const authError = await requireAdmin();
   if (authError) return { error: authError };
+  const eligibilityError = await deliveryEligibilityError(portalId, clientId);
+  if (eligibilityError) return { error: eligibilityError };
   const stagingUrl = String(formData.get("stagingUrl") ?? "").trim() || null;
   const liveUrl = String(formData.get("liveUrl") ?? "").trim() || null;
   try {
@@ -72,6 +94,8 @@ export async function markWebsiteDraftReady(
 ): Promise<DeliveryActionState> {
   const authError = await requireAdmin();
   if (authError) return { error: authError };
+  const eligibilityError = await deliveryEligibilityError(portalId, clientId);
+  if (eligibilityError) return { error: eligibilityError };
   const existing = await db.delivery.findUnique({ where: { portalId } });
   const stagingUrl = String(formData.get("stagingUrl") ?? "").trim() || existing?.stagingUrl;
   if (!stagingUrl) return { error: "Enter a staging URL before marking the draft ready." };
@@ -105,6 +129,8 @@ export async function sendClientReview(
 ): Promise<DeliveryActionState> {
   const authError = await requireAdmin();
   if (authError) return { error: authError };
+  const eligibilityError = await deliveryEligibilityError(portalId, clientId);
+  if (eligibilityError) return { error: eligibilityError };
   const [client, existing] = await Promise.all([
     db.client.findUnique({ where: { id: clientId } }),
     db.delivery.findUnique({
