@@ -9,7 +9,7 @@ export { parseGitHubRepositoryUrl, validateRepositoryName, validateRepositoryOwn
 const API = "https://api.github.com";
 const API_VERSION = "2022-11-28";
 
-type Repo = { id: number; node_id: string; html_url: string; private: boolean; visibility?: string; default_branch: string; is_template?: boolean };
+type Repo = { id: number; node_id: string; name: string; owner: { login: string }; html_url: string; private: boolean; visibility?: string; default_branch: string; is_template?: boolean };
 type GitHubResult<T> = { data: T; requestId: string | null };
 
 export class GitHubApiError extends Error {

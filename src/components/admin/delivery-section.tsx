@@ -78,8 +78,8 @@ function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl
   </div>;
 }
 
-export function DeliverySection({ portalId, clientId, delivery, reviewUrl, workflowStage, locked }: { portalId: string; clientId: string; delivery: DeliveryWithReviews | null; reviewUrl: string | null; workflowStage: WorkflowStage; locked: boolean }) {
-  if (locked) return <SectionLocked title="Build & Delivery" icon={Hammer} reason="Available once Build Setup is confirmed and website provisioning succeeds." />;
+export function DeliverySection({ portalId, clientId, delivery, reviewUrl, workflowStage, locked, lockReason }: { portalId: string; clientId: string; delivery: DeliveryWithReviews | null; reviewUrl: string | null; workflowStage: WorkflowStage; locked: boolean; lockReason: string }) {
+  if (locked) return <SectionLocked title="Build & Delivery" icon={Hammer} reason={lockReason} />;
   if (!delivery) return <StartBuild portalId={portalId} clientId={clientId} />;
   return <DraftAndReview portalId={portalId} clientId={clientId} delivery={delivery} workflowStage={workflowStage} reviewUrl={reviewUrl} />;
 }

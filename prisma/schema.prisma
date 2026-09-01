@@ -419,6 +419,15 @@ enum WebsiteProvisioningStatus {
   NEEDS_RECONCILIATION
 }
 
+enum NetlifyProvisioningStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  DEPLOYING
+  SUCCEEDED
+  FAILED
+  NEEDS_RECONCILIATION
+}
+
 model BuildSetup {
   id                    String               @id @default(cuid())
   portalId              String               @unique
@@ -499,11 +508,50 @@ model WebsiteProvisioning {
   createdAt            DateTime                  @default(now())
   updatedAt            DateTime                  @updatedAt
 
-  buildSetup BuildSetup @relation(fields: [buildSetupId], references: [id], onDelete: Cascade)
+  buildSetup          BuildSetup           @relation(fields: [buildSetupId], references: [id], onDelete: Cascade)
+  netlifyProvisioning NetlifyProvisioning?
 
   @@index([status])
   @@index([status, leaseExpiresAt])
   @@index([targetOwner, targetRepositoryName])
+}
+
+model NetlifyProvisioning {
+  id                          String                    @id @default(cuid())
+  websiteProvisioningId       String                    @unique
+  status                      NetlifyProvisioningStatus @default(NOT_STARTED)
+  netlifySiteId               String?                   @unique
+  siteName                    String
+  adminUrl                    String?
+  siteUrl                     String?
+  sslUrl                      String?
+  accountSlug                 String
+  githubRepositoryId          BigInt
+  repositoryPath              String
+  repositoryBranch            String
+  netlifyGithubInstallationId BigInt
+  initialBuildId              String?
+  initialDeployId             String?
+  initialDeployState          String?
+  initialDeployUrl            String?
+  initialDeploySslUrl         String?
+  attemptCount                Int                       @default(0)
+  lastAttemptAt               DateTime?
+  startedAt                   DateTime?
+  siteCreatedAt               DateTime?
+  provisionedAt               DateTime?
+  failedAt                    DateTime?
+  leaseExpiresAt              DateTime?
+  lastErrorCode               String?
+  lastErrorMessage            String?
+  createdAt                   DateTime                  @default(now())
+  updatedAt                   DateTime                  @updatedAt
+
+  websiteProvisioning WebsiteProvisioning @relation(fields: [websiteProvisioningId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([status, leaseExpiresAt])
+  @@index([siteName])
 }
 
 // --- Invoicing ---

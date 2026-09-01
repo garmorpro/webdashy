@@ -11,6 +11,7 @@ import { ClientStepper } from "@/components/admin/client-stepper";
 import { RequirementsSection } from "@/components/admin/requirements-section";
 import { BuildSetupSection } from "@/components/admin/build-setup-section";
 import { WebsiteProvisioningSection } from "@/components/admin/website-provisioning-section";
+import { NetlifyProvisioningSection } from "@/components/admin/netlify-provisioning-section";
 import { InvoiceSection } from "@/components/admin/invoice-section";
 import { DeliverySection } from "@/components/admin/delivery-section";
 import { SectionLocked } from "@/components/admin/section-locked";
@@ -42,7 +43,7 @@ export default async function ClientDetailPage({
           templates: { include: { template: true }, orderBy: { displayOrder: "asc" } },
           selection: { include: { template: true, plan: true } },
           requirements: true,
-          buildSetup: { include: { websiteProvisioning: true } },
+          buildSetup: { include: { websiteProvisioning: { include: { netlifyProvisioning: true } } } },
           delivery: { include: { reviews: { orderBy: { cycle: "desc" } } } },
           invoices: { orderBy: { createdAt: "desc" }, take: 1, include: { lineItems: true } },
         },
@@ -66,7 +67,13 @@ export default async function ClientDetailPage({
   const deliveryLocked =
     !isWorkflowStageAtLeast(client.workflowStage, "BUILD_SETUP") ||
     portal?.buildSetup?.status !== "CONFIRMED" ||
-    portal?.buildSetup?.websiteProvisioning?.status !== "SUCCEEDED";
+    portal?.buildSetup?.websiteProvisioning?.status !== "SUCCEEDED" ||
+    portal?.buildSetup?.websiteProvisioning?.netlifyProvisioning?.status !== "SUCCEEDED";
+  const deliveryLockReason = portal?.buildSetup?.websiteProvisioning?.status !== "SUCCEEDED"
+    ? "Available once GitHub Website Provisioning succeeds."
+    : portal?.buildSetup?.websiteProvisioning?.netlifyProvisioning?.status !== "SUCCEEDED"
+      ? "Available once Netlify provisioning and its initial production deploy succeed."
+      : "Available once Build Setup is confirmed.";
   // A portal can't be created until the client's finished the Design
   // Questionnaire — an already-created portal (or a client who reached
   // this stage before the questionnaire feature existed) stays fully
@@ -194,6 +201,14 @@ export default async function ClientDetailPage({
                 setup={portal.buildSetup}
                 provisioning={portal.buildSetup?.websiteProvisioning ?? null}
               />
+
+              <NetlifyProvisioningSection
+                portalId={portal.id}
+                clientId={client.id}
+                setup={portal.buildSetup}
+                website={portal.buildSetup?.websiteProvisioning ?? null}
+                provisioning={portal.buildSetup?.websiteProvisioning?.netlifyProvisioning ?? null}
+              />
             </div>
 
             <div id="section-delivery">
@@ -204,6 +219,7 @@ export default async function ClientDetailPage({
                 reviewUrl={reviewUrl}
                 workflowStage={client.workflowStage}
                 locked={deliveryLocked}
+                lockReason={deliveryLockReason}
               />
             </div>
 

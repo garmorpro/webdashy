@@ -32,13 +32,14 @@ async function deliveryEligibilityError(portalId: string, clientId: string): Pro
   const portal = await db.portal.findFirst({
     where: { id: portalId, clientId },
     select: {
-      buildSetup: { select: { status: true, websiteProvisioning: { select: { status: true } } } },
+      buildSetup: { select: { status: true, websiteProvisioning: { select: { status: true, netlifyProvisioning: { select: { status: true } } } } } },
       client: { select: { workflowStage: true } },
     },
   });
   if (!portal) return "Client project not found.";
   if (portal.buildSetup?.status !== "CONFIRMED") return "Confirm Build Setup before starting delivery work.";
   if (portal.buildSetup.websiteProvisioning?.status !== "SUCCEEDED") return "Provision the website repository before starting delivery work.";
+  if (portal.buildSetup.websiteProvisioning.netlifyProvisioning?.status !== "SUCCEEDED") return "Provision Netlify and wait for its initial production deploy before starting delivery work.";
   if (!isWorkflowStageAtLeast(portal.client.workflowStage, "BUILD_SETUP")) {
     return "This project has not reached Build Setup yet.";
   }
