@@ -39,7 +39,7 @@ export default async function ClientDetailPage({
           templates: { include: { template: true }, orderBy: { displayOrder: "asc" } },
           selection: { include: { template: true, plan: true } },
           requirements: true,
-          delivery: true,
+          delivery: { include: { reviews: { orderBy: { cycle: "desc" } } } },
           invoices: { orderBy: { createdAt: "desc" }, take: 1, include: { lineItems: true } },
         },
       },
@@ -189,6 +189,7 @@ export default async function ClientDetailPage({
                 clientId={client.id}
                 delivery={portal.delivery}
                 reviewUrl={reviewUrl}
+                workflowStage={client.workflowStage}
                 locked={deliveryLocked}
               />
             </div>

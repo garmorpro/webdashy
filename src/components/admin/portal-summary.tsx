@@ -2,13 +2,30 @@
 
 import { useTransition } from "react";
 import Link from "next/link";
-import { Copy, ExternalLink, Eye, Ban, CheckCircle2, Pencil, Link2, Send } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  Eye,
+  Ban,
+  CheckCircle2,
+  Pencil,
+  Link2,
+  Send,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDeleteButton } from "@/components/admin/confirm-delete-button";
-import { setPortalDisabled, resetPortalSelection, resendPortalEmail } from "@/lib/actions/portals";
-import { PORTAL_STATUS_LABELS, PORTAL_STATUS_STYLES } from "@/lib/portal-status";
+import {
+  deletePortal,
+  setPortalDisabled,
+  resetPortalSelection,
+  resendPortalEmail,
+} from "@/lib/actions/portals";
+import {
+  PORTAL_STATUS_LABELS,
+  PORTAL_STATUS_STYLES,
+} from "@/lib/portal-status";
 import type { PortalStatus } from "@prisma/client";
 
 export function PortalSummary({
@@ -38,7 +55,9 @@ export function PortalSummary({
 }) {
   const [isPending, startTransition] = useTransition();
 
-  const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
+  const dateFormatter = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+  });
   const isDisabled = status === "DISABLED";
 
   function copyLink() {
@@ -69,6 +88,19 @@ export function PortalSummary({
       }
     });
   }
+
+  const deleteControl = (
+    <ConfirmDeleteButton
+      triggerLabel="Delete Portal"
+      title="Delete this portal permanently?"
+      description="Delete this portal permanently? This will remove its template selection, requirements, invoices, delivery/review data, and related portal records. This cannot be undone."
+      confirmLabel="Delete Portal"
+      onConfirm={async () => {
+        const result = await deletePortal(portalId, clientId);
+        if (result?.error) throw new Error(result.error);
+      }}
+    />
+  );
 
   // Once the client has actually selected, the full link/stats/message
   // view is mostly noise — collapse to a compact summary, same
@@ -105,7 +137,10 @@ export function PortalSummary({
               </>
             ) : null}
             {selectedAt ? (
-              <span className="text-muted-foreground"> · selected {dateFormatter.format(selectedAt)}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                · selected {dateFormatter.format(selectedAt)}
+              </span>
             ) : null}
           </span>
         </div>
@@ -119,7 +154,9 @@ export function PortalSummary({
             variant="outline"
             size="sm"
             nativeButton={false}
-            render={<a href={portalUrl} target="_blank" rel="noopener noreferrer" />}
+            render={
+              <a href={portalUrl} target="_blank" rel="noopener noreferrer" />
+            }
           >
             <ExternalLink className="h-3.5 w-3.5" />
             Open Portal
@@ -134,6 +171,25 @@ export function PortalSummary({
               if (result?.error) throw new Error(result.error);
             }}
           />
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isPending}
+            onClick={toggleDisabled}
+          >
+            {isDisabled ? (
+              <>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Enable Portal
+              </>
+            ) : (
+              <>
+                <Ban className="h-3.5 w-3.5" />
+                Disable Portal
+              </>
+            )}
+          </Button>
+          {deleteControl}
         </div>
       </div>
     );
@@ -142,14 +198,18 @@ export function PortalSummary({
   return (
     <div className="space-y-4 rounded-xl border border-border bg-card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-foreground">Template Portal</h2>
+        <h2 className="text-sm font-semibold text-foreground">
+          Template Portal
+        </h2>
         <Badge variant="secondary" className={PORTAL_STATUS_STYLES[status]}>
           {PORTAL_STATUS_LABELS[status]}
         </Badge>
       </div>
 
       <div className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2">
-        <code className="flex-1 truncate text-sm text-foreground">{portalUrl}</code>
+        <code className="flex-1 truncate text-sm text-foreground">
+          {portalUrl}
+        </code>
         <Button variant="outline" size="sm" onClick={copyLink}>
           <Copy className="h-3.5 w-3.5" />
           Copy Portal Link
@@ -158,7 +218,9 @@ export function PortalSummary({
           variant="outline"
           size="sm"
           nativeButton={false}
-          render={<a href={portalUrl} target="_blank" rel="noopener noreferrer" />}
+          render={
+            <a href={portalUrl} target="_blank" rel="noopener noreferrer" />
+          }
         >
           <ExternalLink className="h-3.5 w-3.5" />
           Open Portal
@@ -203,7 +265,12 @@ export function PortalSummary({
           Edit Templates
         </Button>
 
-        <Button variant="outline" size="sm" disabled={isPending} onClick={toggleDisabled}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          onClick={toggleDisabled}
+        >
           {isDisabled ? (
             <>
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -217,10 +284,17 @@ export function PortalSummary({
           )}
         </Button>
 
-        <Button variant="outline" size="sm" disabled={isPending} onClick={resendEmail}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isPending}
+          onClick={resendEmail}
+        >
           <Send className="h-3.5 w-3.5" />
           Resend Email
         </Button>
+
+        {deleteControl}
       </div>
     </div>
   );

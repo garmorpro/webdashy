@@ -8,6 +8,7 @@ import { renderInvoicePdf } from "@/lib/invoice-pdf";
 import { buildInvoicePdfData } from "@/lib/invoice-pdf-data";
 import { sendInvoiceEmail } from "@/lib/mail";
 import { pipelineStepIndex } from "@/lib/client-status";
+import { workflowStageIndex } from "@/lib/workflow";
 import { maybeCompleteProject } from "@/lib/project-completion";
 import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
@@ -117,7 +118,9 @@ export async function createAndSendInvoice(
   if (pipelineStepIndex("INVOICE_SENT") > pipelineStepIndex(client.status)) {
     await db.client.update({ where: { id: clientId }, data: { status: "INVOICE_SENT" } });
   }
-  await advanceClientWorkflow(clientId, "INVOICE");
+  if (workflowStageIndex(client.workflowStage) >= workflowStageIndex("REVISIONS_APPROVED")) {
+    await advanceClientWorkflow(clientId, "INVOICE");
+  }
 
   revalidatePath(`/clients/${clientId}`);
   return {};
@@ -164,7 +167,13 @@ export async function markInvoicePaid(invoiceId: string, clientId: string) {
       where: { id: invoiceId },
       data: { status: "PAID", paidAt: new Date() },
     });
-    await advanceClientWorkflow(clientId, "PAYMENT_RECEIVED", tx);
+    const workflow = await tx.client.findUnique({
+      where: { id: clientId },
+      select: { workflowStage: true },
+    });
+    if (workflow && workflowStageIndex(workflow.workflowStage) >= workflowStageIndex("INVOICE")) {
+      await advanceClientWorkflow(clientId, "PAYMENT_RECEIVED", tx);
+    }
     return updated;
   });
 

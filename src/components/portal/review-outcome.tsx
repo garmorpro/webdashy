@@ -20,7 +20,7 @@ export function ReviewOutcome({
       </h2>
       <p className="mt-2 max-w-sm text-sm text-slate-500">
         {approved
-          ? "We're all set — this project is wrapped up."
+          ? "Thanks — we’ll prepare the approved site for the next project steps."
           : "We'll make those changes and follow up with you shortly."}
       </p>
 

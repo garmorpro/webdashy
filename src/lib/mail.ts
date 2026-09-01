@@ -186,25 +186,25 @@ export async function sendDeliveryReviewEmail({
   to,
   contactName,
   businessName,
-  liveUrl,
+  stagingUrl,
   reviewUrl,
 }: {
   to: string;
   contactName: string;
   businessName: string;
-  liveUrl: string;
+  stagingUrl: string;
   reviewUrl: string;
 }): Promise<void> {
   if (isEmailDryRun()) {
-    logEmailDryRun("Delivery review email", to);
+    logEmailDryRun("Client review email", to);
     return;
   }
 
   const t = getTransporter();
   if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
 
-  const html = renderDeliveryReviewEmail({ contactName, businessName, liveUrl, reviewUrl });
-  const text = `Hi ${contactName}, ${businessName}'s new site is ready: ${liveUrl}\nReview it here: ${reviewUrl}`;
+  const html = renderDeliveryReviewEmail({ contactName, businessName, stagingUrl, reviewUrl });
+  const text = `Hi ${contactName}, ${businessName}'s new site is ready: ${stagingUrl}\nReview it here: ${reviewUrl}`;
 
   await t.sendMail({
     from: `WebDashy <${getFromAddress()}>`,

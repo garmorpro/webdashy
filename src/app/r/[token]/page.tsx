@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 async function getDelivery(token: string) {
   return db.delivery.findUnique({
     where: { reviewToken: token },
-    include: { portal: { include: { client: true } } },
+    include: { reviews: { orderBy: { cycle: "desc" }, take: 1 }, portal: { include: { client: true } } },
   });
 }
 
@@ -42,8 +42,9 @@ export default async function DeliveryReviewPage({
   const { token } = await params;
   const delivery = await getDelivery(token);
 
-  if (!delivery || delivery.status !== "DELIVERED" || !delivery.liveUrl) notFound();
+  if (!delivery || delivery.reviews.length === 0) notFound();
 
+  const review = delivery.reviews[0];
   const { client } = delivery.portal;
 
   return (
@@ -62,29 +63,29 @@ export default async function DeliveryReviewPage({
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-          <span className="ml-2 truncate font-mono text-xs text-slate-500">{delivery.liveUrl}</span>
+          <span className="ml-2 truncate font-mono text-xs text-slate-500">{review.stagingUrl}</span>
         </div>
-        <a href={delivery.liveUrl} target="_blank" rel="noopener noreferrer" className="block">
+        <a href={review.stagingUrl} target="_blank" rel="noopener noreferrer" className="block">
           <div className="aspect-[16/9] w-full bg-gradient-to-br from-[#1b2951] via-slate-700 to-lime-300" />
         </a>
         <div className="border-t border-slate-200 px-4 py-3 text-center">
           <a
-            href={delivery.liveUrl}
+            href={review.stagingUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-semibold text-[#1b2951] underline"
           >
-            Visit the live site →
+            Visit the staging site →
           </a>
         </div>
       </div>
 
-      {delivery.reviewStatus === "AWAITING" ? (
+      {review.status === "AWAITING" ? (
         <ReviewActions reviewToken={token} />
       ) : (
         <ReviewOutcome
-          approved={delivery.reviewStatus === "APPROVED"}
-          feedback={delivery.reviewFeedback}
+          approved={review.status === "APPROVED"}
+          feedback={review.feedback}
         />
       )}
     </PortalShell>

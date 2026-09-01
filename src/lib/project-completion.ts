@@ -17,7 +17,7 @@ export async function maybeCompleteProject(clientId: string, portalId: string): 
   ]);
 
   if (!client) return;
-  if (delivery?.reviewStatus !== "APPROVED") return;
+  if (delivery?.status !== "DELIVERED" || delivery.reviewStatus !== "APPROVED") return;
   if (unpaidCount > 0) return;
 
   await db.$transaction(async (tx) => {

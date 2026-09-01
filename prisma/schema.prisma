@@ -461,9 +461,6 @@ model Delivery {
   status         DeliveryStatus @default(BUILDING)
   stagingUrl     String?
   liveUrl        String?
-  // Set the moment the site is marked Delivered — that's what the public
-  // review page (/r/[reviewToken]) resolves by, same security pattern as
-  // Portal.token (see ARCHITECTURE.md §6): unguessable, never client ids.
   reviewToken    String?        @unique
   reviewStatus   ReviewStatus   @default(AWAITING)
   reviewFeedback String?
@@ -472,7 +469,24 @@ model Delivery {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  portal Portal @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  portal  Portal           @relation(fields: [portalId], references: [id], onDelete: Cascade)
+  reviews DeliveryReview[]
 
   @@index([reviewToken])
+}
+
+model DeliveryReview {
+  id          String       @id @default(cuid())
+  deliveryId  String
+  cycle       Int
+  stagingUrl  String
+  status      ReviewStatus @default(AWAITING)
+  feedback    String?
+  sentAt      DateTime     @default(now())
+  respondedAt DateTime?
+
+  delivery Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+
+  @@unique([deliveryId, cycle])
+  @@index([deliveryId, sentAt])
 }

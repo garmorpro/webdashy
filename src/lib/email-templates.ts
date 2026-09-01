@@ -145,16 +145,16 @@ export function renderInvoiceEmail({
 </html>`;
 }
 
-/** Client-facing — sent when the admin marks the site Delivered. */
+/** Client-facing — sent when the admin sends a website draft for client review. */
 export function renderDeliveryReviewEmail({
   contactName,
   businessName,
-  liveUrl,
+  stagingUrl,
   reviewUrl,
 }: {
   contactName: string;
   businessName: string;
-  liveUrl: string;
+  stagingUrl: string;
   reviewUrl: string;
 }): string {
   return `<!DOCTYPE html>
@@ -177,8 +177,8 @@ export function renderDeliveryReviewEmail({
             <tr>
               <td style="padding:20px 32px 0;text-align:center;">
                 <h1 style="margin:0;font-size:20px;line-height:1.3;color:#1b2951;font-weight:700;">Your website is ready for review!</h1>
-                <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#475569;">Hi ${escapeHtml(contactName)}, the ${escapeHtml(businessName)} site is built and live at:</p>
-                <p style="margin:6px 0 0;font-size:14px;"><a href="${liveUrl}" style="color:#1b2951;font-weight:700;">${escapeHtml(liveUrl)}</a></p>
+                <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#475569;">Hi ${escapeHtml(contactName)}, the ${escapeHtml(businessName)} first website draft is ready at:</p>
+                <p style="margin:6px 0 0;font-size:14px;"><a href="${stagingUrl}" style="color:#1b2951;font-weight:700;">${escapeHtml(stagingUrl)}</a></p>
               </td>
             </tr>
             <tr>
