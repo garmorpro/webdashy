@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
 /**
  * A project is "complete" (Client.status → WON) once both halves of step 8
@@ -15,9 +16,14 @@ export async function maybeCompleteProject(clientId: string, portalId: string): 
     db.invoice.count({ where: { portalId, status: { not: "PAID" } } }),
   ]);
 
-  if (!client || client.status === "WON") return;
+  if (!client) return;
   if (delivery?.reviewStatus !== "APPROVED") return;
   if (unpaidCount > 0) return;
 
-  await db.client.update({ where: { id: clientId }, data: { status: "WON" } });
+  await db.$transaction(async (tx) => {
+    if (client.status !== "WON") {
+      await tx.client.update({ where: { id: clientId }, data: { status: "WON" } });
+    }
+    await advanceClientWorkflow(clientId, "CLIENT_CARE", tx);
+  });
 }

@@ -8,6 +8,7 @@ import { generatePortalToken } from "@/lib/tokens";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { sendPortalEmail } from "@/lib/mail";
 import { pipelineStepIndex } from "@/lib/client-status";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
 export type PortalActionState = { error?: string };
 
@@ -98,6 +99,7 @@ export async function createPortal(
   if (pipelineStepIndex("PORTAL_SENT") > pipelineStepIndex(client.status)) {
     await db.client.update({ where: { id: clientId }, data: { status: "PORTAL_SENT" } });
   }
+  await advanceClientWorkflow(clientId, "PORTAL_SENT");
 
   revalidatePath(`/clients/${clientId}`);
   redirect(`/clients/${clientId}`);

@@ -122,6 +122,8 @@ export default async function ClientDetailPage({
         <div id="section-contact">
           <ClientContactSection
             action={boundUpdate}
+            clientId={client.id}
+            workflowStage={client.workflowStage}
             cancelHref={`/clients/${client.id}`}
             values={{
               businessName: client.businessName,

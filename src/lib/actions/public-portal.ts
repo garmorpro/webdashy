@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { sendSelectionNotification } from "@/lib/mail";
 import { Prisma } from "@prisma/client";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
 export type ConfirmSelectionState = { error?: string };
 
@@ -62,19 +63,21 @@ export async function confirmPortalSelection(
 
   let selectedAt: Date;
   try {
-    const [created] = await db.$transaction([
-      db.templateSelection.create({
+    const created = await db.$transaction(async (tx) => {
+      const selection = await tx.templateSelection.create({
         data: { portalId: portal.id, templateId, planId: validPlanId },
-      }),
-      db.portal.update({
+      });
+      await tx.portal.update({
         where: { id: portal.id },
         data: { status: "SELECTED" },
-      }),
-      db.client.update({
+      });
+      await tx.client.update({
         where: { id: portal.clientId },
         data: { status: "TEMPLATE_SELECTED" },
-      }),
-    ]);
+      });
+      await advanceClientWorkflow(portal.clientId, "TEMPLATE_AND_PLAN", tx);
+      return selection;
+    });
     selectedAt = created.selectedAt;
   } catch (err) {
     // Unique constraint on TemplateSelection.portalId — a concurrent

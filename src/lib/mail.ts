@@ -13,6 +13,14 @@ import {
 
 let transporter: nodemailer.Transporter | null | undefined;
 
+function isEmailDryRun(): boolean {
+  return process.env.EMAIL_DRY_RUN === "true";
+}
+
+function logEmailDryRun(emailType: string, to: string | undefined): void {
+  console.info(`[EMAIL DRY RUN] ${emailType} to ${to ?? "unconfigured recipient"}`);
+}
+
 /**
  * Lazily builds (and caches) the Gmail SMTP transporter. Returns null if
  * GMAIL_USER/GMAIL_APP_PASSWORD aren't configured — notifications are
@@ -51,6 +59,14 @@ export async function sendSelectionNotification({
   selectedAt: Date;
   clientAdminUrl: string;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun(
+      "Selection notification email",
+      process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER
+    );
+    return;
+  }
+
   const t = getTransporter();
   if (!t) return;
 
@@ -133,6 +149,11 @@ export async function sendInvoiceEmail({
   paymentInstructions: string | null;
   pdfBuffer: Buffer;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun("Invoice email", to);
+    return;
+  }
+
   const t = getTransporter();
   if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
 
@@ -174,6 +195,11 @@ export async function sendDeliveryReviewEmail({
   liveUrl: string;
   reviewUrl: string;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun("Delivery review email", to);
+    return;
+  }
+
   const t = getTransporter();
   if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
 
@@ -205,6 +231,11 @@ export async function sendPasswordResetEmail({
   name: string;
   resetUrl: string;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun("Password reset email", to);
+    return;
+  }
+
   const t = getTransporter();
   if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
 
@@ -237,6 +268,14 @@ export async function sendReviewOutcomeNotification({
   feedback: string | null;
   clientAdminUrl: string;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun(
+      "Review outcome notification email",
+      process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER
+    );
+    return;
+  }
+
   const t = getTransporter();
   if (!t) return;
 
@@ -277,6 +316,11 @@ export async function sendQuestionnaireEmail({
   businessName: string;
   formUrl: string;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun("Questionnaire email", to);
+    return;
+  }
+
   const t = getTransporter();
   if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
 
@@ -312,6 +356,11 @@ export async function sendPortalEmail({
   portalUrl: string;
   message: string | null;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun("Portal email", to);
+    return;
+  }
+
   const t = getTransporter();
   if (!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
 
@@ -340,6 +389,14 @@ export async function sendQuestionnaireSubmittedNotification({
   clientName: string;
   clientAdminUrl: string;
 }): Promise<void> {
+  if (isEmailDryRun()) {
+    logEmailDryRun(
+      "Questionnaire submitted notification email",
+      process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER
+    );
+    return;
+  }
+
   const t = getTransporter();
   if (!t) return;
 

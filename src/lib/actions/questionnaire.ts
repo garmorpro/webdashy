@@ -7,6 +7,7 @@ import { generateQuestionnaireToken } from "@/lib/tokens";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { sendQuestionnaireEmail, sendQuestionnaireSubmittedNotification } from "@/lib/mail";
 import { pipelineStepIndex } from "@/lib/client-status";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 import { getMissingRequiredFields, type QuestionnaireAnswers } from "@/lib/questionnaire-schema";
 import type { Prisma } from "@prisma/client";
 
@@ -64,6 +65,7 @@ export async function sendQuestionnaire(clientId: string): Promise<{ error?: str
   if (pipelineStepIndex(client.status) < pipelineStepIndex("QUESTIONNAIRE_SENT")) {
     await db.client.update({ where: { id: clientId }, data: { status: "QUESTIONNAIRE_SENT" } });
   }
+  await advanceClientWorkflow(clientId, "QUESTIONNAIRE_SENT");
 
   revalidatePath(`/clients/${clientId}`);
   return {};
@@ -136,6 +138,7 @@ export async function submitQuestionnaire(
       data: { status: "QUESTIONNAIRE_DONE" },
     });
   }
+  await advanceClientWorkflow(questionnaire.clientId, "QUESTIONNAIRE_COMPLETE");
 
   try {
     const clientAdminUrl = await getAbsoluteUrl(`/clients/${questionnaire.clientId}`);

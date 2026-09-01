@@ -9,6 +9,7 @@ import { buildInvoicePdfData } from "@/lib/invoice-pdf-data";
 import { sendInvoiceEmail } from "@/lib/mail";
 import { pipelineStepIndex } from "@/lib/client-status";
 import { maybeCompleteProject } from "@/lib/project-completion";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
 export type InvoiceActionState = { error?: string };
 
@@ -116,6 +117,7 @@ export async function createAndSendInvoice(
   if (pipelineStepIndex("INVOICE_SENT") > pipelineStepIndex(client.status)) {
     await db.client.update({ where: { id: clientId }, data: { status: "INVOICE_SENT" } });
   }
+  await advanceClientWorkflow(clientId, "INVOICE");
 
   revalidatePath(`/clients/${clientId}`);
   return {};
@@ -154,9 +156,16 @@ export async function markInvoicePaid(invoiceId: string, clientId: string) {
   const authError = await requireAdmin();
   if (authError) throw new Error(authError);
 
-  const invoice = await db.invoice.update({
-    where: { id: invoiceId },
-    data: { status: "PAID", paidAt: new Date() },
+  const existing = await db.invoice.findFirst({ where: { id: invoiceId, clientId } });
+  if (!existing) throw new Error("Invoice not found.");
+
+  const invoice = await db.$transaction(async (tx) => {
+    const updated = await tx.invoice.update({
+      where: { id: invoiceId },
+      data: { status: "PAID", paidAt: new Date() },
+    });
+    await advanceClientWorkflow(clientId, "PAYMENT_RECEIVED", tx);
+    return updated;
   });
 
   if (invoice.portalId) {

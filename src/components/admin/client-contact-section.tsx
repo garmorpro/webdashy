@@ -1,10 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { Pencil } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ClientForm, type ClientFormValues } from "@/components/admin/client-form";
 import type { ClientActionState } from "@/lib/actions/clients";
+import { markClientContacted } from "@/lib/actions/client-workflow";
+import type { WorkflowStage } from "@prisma/client";
 
 /**
  * Wraps ClientForm with the same collapsed-summary / expand-to-edit
@@ -17,12 +20,28 @@ export function ClientContactSection({
   action,
   cancelHref,
   values,
+  clientId,
+  workflowStage,
 }: {
   action: (state: ClientActionState, formData: FormData) => Promise<ClientActionState>;
   cancelHref: string;
   values: ClientFormValues;
+  clientId: string;
+  workflowStage: WorkflowStage;
 }) {
   const [editing, setEditing] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  function handleMarkContacted() {
+    startTransition(async () => {
+      const result = await markClientContacted(clientId);
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Client marked as contacted.");
+    });
+  }
 
   if (editing) {
     return (
@@ -42,10 +61,17 @@ export function ClientContactSection({
     <div className="rounded-2xl bg-card p-6">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-extrabold text-foreground">Contact</h2>
-        <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-          <Pencil className="h-3.5 w-3.5" />
-          Edit
-        </Button>
+        <div className="flex items-center gap-2">
+          {workflowStage === "ADD_LEAD" ? (
+            <Button size="sm" disabled={isPending} onClick={handleMarkContacted}>
+              {isPending ? "Saving..." : "Mark Contacted"}
+            </Button>
+          ) : null}
+          <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
+            <Pencil className="h-3.5 w-3.5" />
+            Edit
+          </Button>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-4">
         <div className="min-w-0">

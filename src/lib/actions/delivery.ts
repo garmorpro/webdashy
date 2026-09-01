@@ -7,6 +7,7 @@ import { generateReviewToken } from "@/lib/tokens";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { sendDeliveryReviewEmail } from "@/lib/mail";
 import { pipelineStepIndex } from "@/lib/client-status";
+import { advanceClientWorkflow } from "@/lib/services/client-workflow";
 
 export type DeliveryActionState = { error?: string };
 
@@ -32,6 +33,7 @@ export async function startBuilding(portalId: string, clientId: string) {
     create: { portalId, status: "BUILDING" },
   });
   await advanceStatus(clientId, "BUILDING");
+  await advanceClientWorkflow(clientId, "BUILD_SETUP");
 
   revalidatePath(`/clients/${clientId}`);
 }
@@ -128,6 +130,7 @@ export async function markDelivered(
   }
 
   await advanceStatus(clientId, "DELIVERED");
+  await advanceClientWorkflow(clientId, "LAUNCH_AND_HANDOFF");
 
   revalidatePath(`/clients/${clientId}`);
   return {};

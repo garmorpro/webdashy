@@ -3,6 +3,7 @@
 import type { WorkflowStage } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import {
   ClientWorkflowTransitionError,
   transitionClientWorkflow,
@@ -38,5 +39,33 @@ export async function transitionClientWorkflowAction(
 
     console.error("transitionClientWorkflowAction failed:", error);
     return { success: false, error: "Unable to update the client workflow." };
+  }
+}
+
+export async function markClientContacted(
+  clientId: string
+): Promise<WorkflowTransitionActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) return { success: false, error: "You must be signed in." };
+  if (!clientId.trim()) return { success: false, error: "Invalid client." };
+
+  try {
+    const result = await db.$transaction(async (tx) => {
+      const advanced = await transitionClientWorkflow(clientId, "CONTACT", tx);
+      await tx.client.updateMany({
+        where: { id: clientId, status: "LEAD" },
+        data: { status: "CONTACTED" },
+      });
+      return advanced;
+    });
+    revalidatePath("/clients");
+    revalidatePath(`/clients/${clientId}`);
+    return { success: true, stage: result.stage };
+  } catch (error) {
+    if (error instanceof ClientWorkflowTransitionError) {
+      return { success: false, error: error.message };
+    }
+    console.error("markClientContacted failed:", error);
+    return { success: false, error: "Unable to mark the client contacted." };
   }
 }
