@@ -109,26 +109,47 @@ enum ClientStatus {
   LOST
 }
 
+// Canonical lifecycle progress for Client Workflow V2. ClientStatus remains
+// in place during the migration period for existing UI and automation.
+enum WorkflowStage {
+  ADD_LEAD
+  CONTACT
+  QUESTIONNAIRE_SENT
+  QUESTIONNAIRE_COMPLETE
+  PORTAL_SENT
+  TEMPLATE_AND_PLAN
+  BUILD_SETUP
+  WEBSITE_DRAFT
+  CLIENT_REVIEW
+  REVISIONS_APPROVED
+  INVOICE
+  PAYMENT_RECEIVED
+  LAUNCH_AND_HANDOFF
+  CLIENT_CARE
+}
+
 model Client {
-  id             String       @id @default(cuid())
+  id             String        @id @default(cuid())
   businessName   String
   contactName    String
   email          String
   phone          String?
   website        String?
   industry       String?
-  status         ClientStatus @default(LEAD)
+  status         ClientStatus  @default(LEAD)
+  workflowStage  WorkflowStage @default(ADD_LEAD)
   leadSource     String?
-  estimatedValue Decimal?     @db.Decimal(10, 2)
+  estimatedValue Decimal?      @db.Decimal(10, 2)
   notes          String?
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   portals       Portal[]
   invoices      Invoice[]
   questionnaire DesignQuestionnaire?
 
   @@index([status])
+  @@index([workflowStage])
 }
 
 // --- Design Questionnaire (sent after a lead confirms they want a site,

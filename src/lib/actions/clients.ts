@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { normalizeUrl } from "@/lib/utils";
 import { ClientStatus } from "@prisma/client";
+import { workflowStageForClientStatus } from "@/lib/workflow";
 
 export type ClientActionState = { error?: string };
 
@@ -77,6 +78,7 @@ export async function createClient(
         website: fields.website,
         industry: fields.industry,
         status: fields.status,
+        workflowStage: workflowStageForClientStatus(fields.status),
         leadSource: fields.leadSource,
         estimatedValue,
         notes: fields.notes,
