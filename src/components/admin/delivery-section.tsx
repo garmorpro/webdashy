@@ -38,7 +38,7 @@ function Card({ title, active, children }: { title: string; active?: boolean; ch
 
 function StartBuild({ portalId, clientId }: { portalId: string; clientId: string }) {
   const [pending, startTransition] = useTransition();
-  return <Card title="Build Setup" active><p className="mt-2 text-sm text-muted-foreground">Build Setup is confirmed — ready to start the website draft.</p><Button className="mt-4" disabled={pending} onClick={() => startTransition(async () => { try { await startBuilding(portalId, clientId); } catch { toast.error("Couldn't update this project."); } })}>{pending ? "Starting..." : "Start Building"}</Button></Card>;
+  return <Card title="Website Build" active><p className="mt-2 text-sm text-muted-foreground">Provisioning is complete — ready to begin the website draft.</p><Button className="mt-4" disabled={pending} onClick={() => startTransition(async () => { try { await startBuilding(portalId, clientId); } catch { toast.error("Couldn't update this project."); } })}>{pending ? "Starting..." : "Start Building"}</Button></Card>;
 }
 
 function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl }: { portalId: string; clientId: string; delivery: DeliveryWithReviews; workflowStage: WorkflowStage; reviewUrl: string | null }) {
@@ -57,7 +57,7 @@ function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl
   }
 
   return <div className="space-y-6">
-    <Card title="Build Setup"><Badge variant="secondary" className="mt-2 bg-emerald-50 text-emerald-700">In progress</Badge></Card>
+    {workflowStage === "BUILD_SETUP" ? <Card title="Website Build"><Badge variant="secondary" className="mt-2 bg-emerald-50 text-emerald-700">In progress</Badge></Card> : null}
     <Card title="Website Draft" active={!draftReady}>
       <p className="mt-2 text-sm text-muted-foreground">Save the staging URL, then mark the first rough draft ready.</p>
       <form action={save[1]} className="mt-4 space-y-3">

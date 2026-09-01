@@ -18,10 +18,10 @@ import { SectionLocked } from "@/components/admin/section-locked";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { updateClient } from "@/lib/actions/clients";
-import { CLIENT_STATUS_LABELS, CLIENT_STATUS_STYLES, pipelineStepIndex } from "@/lib/client-status";
+import { pipelineStepIndex } from "@/lib/client-status";
 import { avatarColorsFor, initialsFor } from "@/lib/avatar-colors";
 import { getAbsoluteUrl } from "@/lib/site-url";
-import { isWorkflowStageAtLeast } from "@/lib/workflow";
+import { isWorkflowStageAtLeast, WORKFLOW_STAGE_LABELS } from "@/lib/workflow";
 
 export const dynamic = "force-dynamic";
 
@@ -112,8 +112,8 @@ export default async function ClientDetailPage({
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2.5">
-          <Badge variant="secondary" className={CLIENT_STATUS_STYLES[client.status]}>
-            {CLIENT_STATUS_LABELS[client.status]}
+          <Badge variant="secondary">
+            {WORKFLOW_STAGE_LABELS[client.workflowStage]}
           </Badge>
           <DeleteClientButton clientId={client.id} clientName={client.businessName} iconOnly />
         </div>
