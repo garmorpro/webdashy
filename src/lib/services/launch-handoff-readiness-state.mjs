@@ -30,3 +30,10 @@ export function workflowStageAfterLaunchHandoffReadiness(currentStage, readiness
   const paymentReceivedIndex = WORKFLOW_STAGES.indexOf("PAYMENT_RECEIVED");
   return currentIndex >= paymentReceivedIndex ? currentStage : "PAYMENT_RECEIVED";
 }
+
+export function workflowStageAfterHandoffBegins(currentStage, readiness) {
+  if (!isLaunchHandoffReady(readiness)) return currentStage;
+  const currentIndex = WORKFLOW_STAGES.indexOf(currentStage);
+  const handoffIndex = WORKFLOW_STAGES.indexOf("LAUNCH_AND_HANDOFF");
+  return currentIndex >= handoffIndex ? currentStage : currentStage === "PAYMENT_RECEIVED" ? "LAUNCH_AND_HANDOFF" : currentStage;
+}

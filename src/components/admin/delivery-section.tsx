@@ -17,6 +17,8 @@ import {
 } from "@/lib/actions/delivery";
 import { REVIEW_STATUS_LABELS, REVIEW_STATUS_STYLES } from "@/lib/delivery-status";
 import type { Delivery, DeliveryReview, WorkflowStage } from "@prisma/client";
+import { CompletedMilestone } from "@/components/admin/completed-milestone";
+import { isWorkflowStageAtLeast } from "@/lib/workflow";
 
 type DeliveryWithReviews = Delivery & { reviews: DeliveryReview[] };
 
@@ -25,8 +27,8 @@ function SubmitButton({ label, pendingLabel }: { label: string; pendingLabel: st
   return <Button type="submit" disabled={pending}>{pending ? pendingLabel : label}</Button>;
 }
 
-function Card({ title, active, children }: { title: string; active?: boolean; children: React.ReactNode }) {
-  return (
+function Card({ title, active, completedSummary, children }: { title: string; active?: boolean; completedSummary?: string; children: React.ReactNode }) {
+  const card = (
     <div className={`rounded-xl border bg-card p-5 ${active ? "border-primary shadow-[0_0_0_3px_rgba(164,255,79,0.18)]" : "border-border"}`}>
       <h2 className="flex items-center gap-2 text-sm font-semibold text-foreground">
         <Hammer className="h-4 w-4 text-muted-foreground" />{title}
@@ -34,6 +36,7 @@ function Card({ title, active, children }: { title: string; active?: boolean; ch
       {children}
     </div>
   );
+  return completedSummary ? <CompletedMilestone title={title} summary={completedSummary}>{card}</CompletedMilestone> : card;
 }
 
 function StartBuild({ portalId, clientId }: { portalId: string; clientId: string }) {
@@ -45,9 +48,9 @@ function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl
   const save = useActionState(saveDeliveryUrls.bind(null, portalId, clientId), {});
   const ready = useActionState(markWebsiteDraftReady.bind(null, portalId, clientId), {});
   const send = useActionState(sendClientReview.bind(null, portalId, clientId), {});
-  const draftReady = workflowStage !== "BUILD_SETUP";
+  const draftReady = isWorkflowStageAtLeast(workflowStage, "CLIENT_REVIEW");
   const inReview = workflowStage === "CLIENT_REVIEW";
-  const approved = workflowStage === "REVISIONS_APPROVED";
+  const approved = delivery.reviewStatus === "APPROVED";
   const canSend = workflowStage === "WEBSITE_DRAFT" || (inReview && delivery.reviewStatus === "CHANGES_REQUESTED");
   const dateFmt = new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" });
 
@@ -58,7 +61,7 @@ function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl
 
   return <div className="space-y-6">
     {workflowStage === "BUILD_SETUP" ? <Card title="Website Build"><Badge variant="secondary" className="mt-2 bg-emerald-50 text-emerald-700">In progress</Badge></Card> : null}
-    <Card title="Website Draft" active={!draftReady}>
+    <Card title="Website Draft" active={!draftReady} completedSummary={draftReady ? "Draft ready" : undefined}>
       <p className="mt-2 text-sm text-muted-foreground">Save the staging URL, then mark the first rough draft ready.</p>
       <form action={save[1]} className="mt-4 space-y-3">
         {save[0]?.error ? <p className="text-sm text-destructive">{save[0].error}</p> : null}
@@ -67,7 +70,7 @@ function DraftAndReview({ portalId, clientId, delivery, workflowStage, reviewUrl
       </form>
       {!draftReady ? <form action={ready[1]} className="mt-3"><input type="hidden" name="stagingUrl" value={delivery.stagingUrl ?? ""} />{ready[0]?.error ? <p className="mb-2 text-sm text-destructive">{ready[0].error}</p> : null}<SubmitButton label="Mark Draft Ready" pendingLabel="Marking ready..." /></form> : <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" />Draft marked ready</div>}
     </Card>
-    <Card title="Client Review" active={workflowStage === "WEBSITE_DRAFT" || inReview}>
+    <Card title="Client Review" active={workflowStage === "WEBSITE_DRAFT" || inReview} completedSummary={delivery.reviewStatus === "APPROVED" ? `Approved${delivery.reviewedAt ? ` ${new Intl.DateTimeFormat("en-US", { dateStyle: "medium" }).format(delivery.reviewedAt)}` : ""}` : undefined}>
       {approved ? <div className="mt-3 flex items-center gap-2 text-sm text-emerald-700"><CheckCircle2 className="h-4 w-4" />Client approved the revisions{delivery.reviewedAt ? ` on ${dateFmt.format(delivery.reviewedAt)}` : ""}.</div> : null}
       {inReview ? <Badge variant="secondary" className={`mt-2 ${REVIEW_STATUS_STYLES[delivery.reviewStatus]}`}>{REVIEW_STATUS_LABELS[delivery.reviewStatus]}</Badge> : null}
       {delivery.reviewStatus === "CHANGES_REQUESTED" && delivery.reviewFeedback ? <div className="mt-3 rounded-lg border-l-2 border-rose-400 bg-rose-50 px-4 py-3 text-sm text-rose-900"><div className="mb-1 flex items-center gap-2 font-semibold"><MessageCircle className="h-4 w-4" />Requested revisions</div>{delivery.reviewFeedback}</div> : null}

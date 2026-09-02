@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WORKFLOW_STAGES, workflowStageIndex } from "@/lib/workflow";
 import type { WorkflowStage } from "@prisma/client";
+import { workflowStepState } from "./client-stepper-state.mjs";
 
 const WORKFLOW_STAGE_ANCHORS: Record<WorkflowStage, string> = {
   ADD_LEAD: "contact",
@@ -18,8 +19,8 @@ const WORKFLOW_STAGE_ANCHORS: Record<WorkflowStage, string> = {
   REVISIONS_APPROVED: "delivery",
   INVOICE: "invoice",
   PAYMENT_RECEIVED: "invoice",
-  LAUNCH_AND_HANDOFF: "delivery",
-  CLIENT_CARE: "delivery",
+  LAUNCH_AND_HANDOFF: "launch-handoff",
+  CLIENT_CARE: "launch-handoff",
 };
 
 function scrollToAnchor(anchorId: string) {
@@ -47,8 +48,7 @@ export function ClientStepper({ workflowStage }: { workflowStage: WorkflowStage 
     <div className="rounded-3xl bg-card p-6">
       <div className="flex items-start gap-0 overflow-x-auto">
         {WORKFLOW_STAGES.map(({ key, label }, i) => {
-          const done = i < current;
-          const isCurrent = i === current;
+          const { done, current: isCurrent } = workflowStepState(i, current);
           return (
             <div key={key} className="relative flex min-w-[90px] flex-col items-center gap-2">
               {i > 0 ? (

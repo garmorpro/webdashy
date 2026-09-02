@@ -9,6 +9,7 @@ import { PlanCategoriesManager } from "@/components/admin/plan-categories-manage
 import { PlansBuilder } from "@/components/admin/plans-builder";
 import { InvoiceSettingsForm } from "@/components/admin/invoice-settings-form";
 import { ApiAccessSection } from "@/components/admin/api-access-section";
+import { HandoffTemplateSettings } from "@/components/admin/handoff-template-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -17,12 +18,13 @@ export default async function SettingsPage() {
   // proxy.ts guarantees a session exists for any route under (admin), but
   // TypeScript doesn't know that — fall back to empty values rather than
   // asserting, in case that ever changes.
-  const [user, plans, planCategories, settings, webhookUrl] = await Promise.all([
+  const [user, plans, planCategories, settings, webhookUrl, handoffRevisions] = await Promise.all([
     session?.user?.id ? db.user.findUnique({ where: { id: session.user.id } }) : null,
     db.plan.findMany({ orderBy: { displayOrder: "asc" }, include: { category: true } }),
     db.planCategory.findMany({ orderBy: { displayOrder: "asc" } }),
     getAppSettings(),
     getAbsoluteUrl("/api/leads"),
+    db.handoffTemplateRevision.findMany({ where: { template: { isDefault: true } }, include: { template: true }, orderBy: { revision: "desc" } }),
   ]);
 
   return (
@@ -53,6 +55,8 @@ export default async function SettingsPage() {
           invoicePaymentInstructions={settings.invoicePaymentInstructions ?? ""}
           invoiceTerms={settings.invoiceTerms}
         />
+
+        <HandoffTemplateSettings revisions={handoffRevisions.map((item) => ({ id: item.id, revision: item.revision, status: item.status, templateName: item.template.name }))} />
 
         <ApiAccessSection
           webhookUrl={webhookUrl}

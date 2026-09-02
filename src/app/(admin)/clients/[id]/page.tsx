@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Link2, Plus, PartyPopper } from "lucide-react";
+import { Link2, Plus } from "lucide-react";
 import { db } from "@/lib/db";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ClientContactSection } from "@/components/admin/client-contact-section";
@@ -22,6 +22,10 @@ import { pipelineStepIndex } from "@/lib/client-status";
 import { avatarColorsFor, initialsFor } from "@/lib/avatar-colors";
 import { getAbsoluteUrl } from "@/lib/site-url";
 import { isWorkflowStageAtLeast, WORKFLOW_STAGE_LABELS } from "@/lib/workflow";
+import { LaunchHandoffSection } from "@/components/admin/launch-handoff-section";
+import { getHandoffReadiness } from "@/lib/services/handoff-packets";
+import { CompletedMilestone } from "@/components/admin/completed-milestone";
+import { countAnsweredFields, TOTAL_QUESTIONNAIRE_FIELDS, type QuestionnaireAnswers } from "@/lib/questionnaire-schema";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +50,7 @@ export default async function ClientDetailPage({
           buildSetup: { include: { websiteProvisioning: { include: { netlifyProvisioning: true } } } },
           delivery: { include: { reviews: { orderBy: { cycle: "desc" } } } },
           invoices: { orderBy: { createdAt: "desc" }, take: 1, include: { lineItems: true } },
+          handoffPackets: { where: { status: { notIn: ["SUPERSEDED", "REVOKED"] } }, orderBy: { version: "desc" }, take: 1, include: { checklistItems: { orderBy: { displayOrder: "asc" } }, templateRevision: true } },
         },
       },
     },
@@ -60,6 +65,8 @@ export default async function ClientDetailPage({
   const reviewUrl =
     portal?.delivery?.reviewToken ? await getAbsoluteUrl(`/r/${portal.delivery.reviewToken}`) : null;
   const latestInvoice = portal?.invoices[0] ?? null;
+  const handoffReadiness = portal ? await getHandoffReadiness(portal.id, client.id) : null;
+  const handoffPacket = portal?.handoffPackets[0] ?? null;
 
   const requirementsLocked = !portal?.selection;
   const buildSetupLocked = !portal?.selection || !portal?.requirements;
@@ -84,6 +91,8 @@ export default async function ClientDetailPage({
 
   const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
   const avatarColors = avatarColorsFor(client.businessName);
+  const questionnaireAnswered = client.questionnaire?.answers && typeof client.questionnaire.answers === "object" && !Array.isArray(client.questionnaire.answers) ? countAnsweredFields(client.questionnaire.answers as QuestionnaireAnswers) : 0;
+  const invoiceTotal = latestInvoice ? latestInvoice.lineItems.reduce((sum, item) => sum + Number(item.amount), Number(latestInvoice.taxAmount)) : 0;
 
   return (
     <div>
@@ -124,16 +133,6 @@ export default async function ClientDetailPage({
       </div>
 
       <div className="space-y-6">
-        {client.workflowStage === "PAYMENT_RECEIVED" ? (
-          <div className="rounded-xl border border-emerald-500/25 bg-emerald-50 px-6 py-6 text-center">
-            <PartyPopper className="mx-auto h-7 w-7 text-emerald-600" />
-            <h2 className="mt-2 text-lg font-semibold text-emerald-700">Ready for Launch &amp; Handoff</h2>
-            <p className="mt-1 text-sm text-emerald-700/80">
-              {client.businessName} approved their site and all project invoices are paid.
-            </p>
-          </div>
-        ) : null}
-
         <div id="section-contact">
           <ClientContactSection
             action={boundUpdate}
@@ -155,19 +154,19 @@ export default async function ClientDetailPage({
           />
         </div>
 
-        <div id="section-questionnaire">
+        <div id="section-questionnaire">{client.questionnaire?.status === "SUBMITTED" ? <CompletedMilestone title="Design Questionnaire" summary={`Submitted ${client.questionnaire.submittedAt ? dateFormatter.format(client.questionnaire.submittedAt) : ""} · ${questionnaireAnswered}/${TOTAL_QUESTIONNAIRE_FIELDS} answered`}>
           <DesignQuestionnaireSection
             clientId={client.id}
             businessName={client.businessName}
             questionnaire={client.questionnaire}
             formUrl={questionnaireFormUrl}
-          />
+          /></CompletedMilestone> : <DesignQuestionnaireSection clientId={client.id} businessName={client.businessName} questionnaire={client.questionnaire} formUrl={questionnaireFormUrl}/>}
         </div>
 
         {portal && portalUrl ? (
           <>
             <div id="section-portal" className="space-y-6">
-              <PortalSummary
+              {portal.selection ? <CompletedMilestone title="Template & Plan" summary={`${portal.selection.template.name}${portal.selection.plan ? ` · ${portal.selection.plan.name}` : ""}`}><PortalSummary
                 portalId={portal.id}
                 clientId={client.id}
                 status={portal.status}
@@ -179,36 +178,36 @@ export default async function ClientDetailPage({
                 selectedTemplateName={portal.selection?.template.name ?? null}
                 selectedPlanName={portal.selection?.plan?.name ?? null}
                 selectedAt={portal.selection?.selectedAt ?? null}
-              />
+              /></CompletedMilestone> : <PortalSummary portalId={portal.id} clientId={client.id} status={portal.status} portalUrl={portalUrl} message={portal.message} templateNames={portal.templates.map((t) => t.template.name)} viewCount={portal.viewCount} createdAt={portal.createdAt} selectedTemplateName={null} selectedPlanName={null} selectedAt={null}/>}
 
-              <RequirementsSection
+              {portal.requirements ? <CompletedMilestone title="Project Requirements" summary={`${portal.requirements.pages.length} pages · ${portal.requirements.features.length} features`}><RequirementsSection
                 portalId={portal.id}
                 clientId={client.id}
                 requirements={portal.requirements}
                 locked={requirementsLocked}
-              />
+              /></CompletedMilestone> : <RequirementsSection portalId={portal.id} clientId={client.id} requirements={portal.requirements} locked={requirementsLocked}/>}
 
-              <BuildSetupSection
+              {portal.buildSetup?.status === "CONFIRMED" ? <CompletedMilestone title="Build Setup" summary={`Confirmed ${portal.buildSetup.confirmedAt ? dateFormatter.format(portal.buildSetup.confirmedAt) : ""}`}><BuildSetupSection
                 portalId={portal.id}
                 clientId={client.id}
                 setup={portal.buildSetup}
                 locked={buildSetupLocked}
-              />
+              /></CompletedMilestone> : <BuildSetupSection portalId={portal.id} clientId={client.id} setup={portal.buildSetup} locked={buildSetupLocked}/>}
 
-              <WebsiteProvisioningSection
+              {portal.buildSetup?.websiteProvisioning?.status === "SUCCEEDED" ? <CompletedMilestone title="GitHub Repository" summary={`${portal.buildSetup.websiteProvisioning.targetOwner}/${portal.buildSetup.websiteProvisioning.targetRepositoryName}`}><WebsiteProvisioningSection
                 portalId={portal.id}
                 clientId={client.id}
                 setup={portal.buildSetup}
                 provisioning={portal.buildSetup?.websiteProvisioning ?? null}
-              />
+              /></CompletedMilestone> : <WebsiteProvisioningSection portalId={portal.id} clientId={client.id} setup={portal.buildSetup} provisioning={portal.buildSetup?.websiteProvisioning ?? null}/>}
 
-              <NetlifyProvisioningSection
+              {portal.buildSetup?.websiteProvisioning?.netlifyProvisioning?.status === "SUCCEEDED" ? <CompletedMilestone title="Netlify Deployment" summary={portal.buildSetup.websiteProvisioning.netlifyProvisioning.sslUrl ?? portal.buildSetup.websiteProvisioning.netlifyProvisioning.siteUrl ?? portal.buildSetup.websiteProvisioning.netlifyProvisioning.siteName}><NetlifyProvisioningSection
                 portalId={portal.id}
                 clientId={client.id}
                 setup={portal.buildSetup}
                 website={portal.buildSetup?.websiteProvisioning ?? null}
                 provisioning={portal.buildSetup?.websiteProvisioning?.netlifyProvisioning ?? null}
-              />
+              /></CompletedMilestone> : <NetlifyProvisioningSection portalId={portal.id} clientId={client.id} setup={portal.buildSetup} website={portal.buildSetup?.websiteProvisioning ?? null} provisioning={portal.buildSetup?.websiteProvisioning?.netlifyProvisioning ?? null}/>}
             </div>
 
             <div id="section-delivery">
@@ -224,13 +223,14 @@ export default async function ClientDetailPage({
             </div>
 
             <div id="section-invoice">
-              <InvoiceSection
+              {latestInvoice?.status === "PAID" ? <CompletedMilestone title="Invoice" summary={`$${invoiceTotal.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · Paid${latestInvoice.paidAt ? ` ${dateFormatter.format(latestInvoice.paidAt)}` : ""}`}><InvoiceSection
                 clientId={client.id}
                 portalId={portal.id}
                 invoice={latestInvoice}
                 locked={invoiceLocked}
-              />
+              /></CompletedMilestone> : <InvoiceSection clientId={client.id} portalId={portal.id} invoice={latestInvoice} locked={invoiceLocked}/>}
             </div>
+            {handoffReadiness ? <LaunchHandoffSection key={handoffPacket?.id ?? "no-handoff-packet"} portalId={portal.id} clientId={client.id} workflowStage={client.workflowStage} readiness={handoffReadiness} packet={handoffPacket ? { id: handoffPacket.id, version: handoffPacket.version, status: handoffPacket.status, recipientName: handoffPacket.recipientName, recipientEmail: handoffPacket.recipientEmail, draftData: handoffPacket.draftData, issuedAt: handoffPacket.issuedAt?.toISOString() ?? null, snapshotHash: handoffPacket.snapshotHash, tokenExpiresAt: handoffPacket.tokenExpiresAt?.toISOString() ?? null, templateRevision: { revision: handoffPacket.templateRevision.revision }, checklistItems: handoffPacket.checklistItems.map((item) => ({ id: item.id, key: item.key, label: item.label, category: item.category, required: item.required, status: item.status, note: item.note })) } : null} /> : null}
           </>
         ) : portalLocked ? (
           <div id="section-portal">
