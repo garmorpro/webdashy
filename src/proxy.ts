@@ -32,8 +32,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Everything except: the public portal, the delivery review page, the
-  // design questionnaire, static assets, brand images, the favicon, and
-  // Next's own internals.
-  matcher: ["/((?!p/|r/|q/|_next/static|_next/image|brand/|favicon.ico).*)"],
+  // Everything except token-authenticated public experiences and assets.
+  // /api/h/ is public; /api/handoff/ remains protected for admins.
+  matcher: ["/((?!p/|r/|q/|h/|api/h/|_next/static|_next/image|brand/|favicon.ico).*)"],
 };

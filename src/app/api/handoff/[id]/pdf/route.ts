@@ -1,0 +1,8 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { renderHandoffPdf } from "@/lib/handoff-pdf";
+import type { HandoffSnapshot } from "@/lib/services/public-handoff";
+import { buildDraftHandoffPreview } from "@/lib/services/handoff-preview";
+export const dynamic = "force-dynamic";
+export async function GET(request:Request,{params}:{params:Promise<{id:string}>}) { if(!(await auth())?.user?.id) return NextResponse.json({error:"Unauthorized"},{status:401}); const {id}=await params; const packet=await db.handoffPacket.findUnique({where:{id},include:{acceptance:true,templateRevision:{include:{template:true}}}}); if(!packet) return NextResponse.json({error:"Not found"},{status:404}); const requestedRevision=Number(new URL(request.url).searchParams.get("templateRevision")); const revision=packet.status==="DRAFT"&&requestedRevision?await db.handoffTemplateRevision.findFirst({where:{templateId:packet.templateRevision.templateId,revision:requestedRevision},include:{template:true}}):packet.templateRevision; if(!revision)return NextResponse.json({error:"Template revision not found"},{status:404}); const preview=buildDraftHandoffPreview(packet,revision); const snapshot=packet.snapshot as unknown as HandoffSnapshot|null; const pdf=await renderHandoffPdf(snapshot??preview,packet.snapshotHash??"DRAFT PREVIEW — NOT ISSUED",packet.acceptance); return new NextResponse(new Uint8Array(pdf),{headers:{"Content-Type":"application/pdf","Content-Disposition":`inline; filename="webdashy-handoff-v${packet.version}.pdf"`,"Cache-Control":"private, no-store"}}); }

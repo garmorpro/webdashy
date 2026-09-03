@@ -26,6 +26,7 @@ import { LaunchHandoffSection } from "@/components/admin/launch-handoff-section"
 import { getHandoffReadiness } from "@/lib/services/handoff-packets";
 import { CompletedMilestone } from "@/components/admin/completed-milestone";
 import { countAnsweredFields, TOTAL_QUESTIONNAIRE_FIELDS, type QuestionnaireAnswers } from "@/lib/questionnaire-schema";
+import { handoffDocumentUnits } from "@/lib/services/handoff-documents.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function ClientDetailPage({
           buildSetup: { include: { websiteProvisioning: { include: { netlifyProvisioning: true } } } },
           delivery: { include: { reviews: { orderBy: { cycle: "desc" } } } },
           invoices: { orderBy: { createdAt: "desc" }, take: 1, include: { lineItems: true } },
-          handoffPackets: { where: { status: { notIn: ["SUPERSEDED", "REVOKED"] } }, orderBy: { version: "desc" }, take: 1, include: { checklistItems: { orderBy: { displayOrder: "asc" } }, templateRevision: true } },
+          handoffPackets: { where: { status: { notIn: ["SUPERSEDED", "REVOKED"] } }, orderBy: { version: "desc" }, take: 1, include: { checklistItems: { orderBy: { displayOrder: "asc" } }, templateRevision: true, acceptance: true, emailAttempts: { orderBy: { attemptedAt: "desc" } } } },
         },
       },
     },
@@ -67,6 +68,10 @@ export default async function ClientDetailPage({
   const latestInvoice = portal?.invoices[0] ?? null;
   const handoffReadiness = portal ? await getHandoffReadiness(portal.id, client.id) : null;
   const handoffPacket = portal?.handoffPackets[0] ?? null;
+  const [latestPublishedHandoffRevision, latestDraftHandoffRevision] = handoffPacket ? await Promise.all([
+    db.handoffTemplateRevision.findFirst({ where: { status: "PUBLISHED", template: { isDefault: true } }, orderBy: { revision: "desc" }, select: { revision: true } }),
+    db.handoffTemplateRevision.findFirst({ where: { status: "DRAFT", template: { isDefault: true }, revision: { gt: handoffPacket.templateRevision.revision } }, orderBy: { revision: "desc" }, select: { id: true, revision: true } }),
+  ]) : [null, null];
 
   const requirementsLocked = !portal?.selection;
   const buildSetupLocked = !portal?.selection || !portal?.requirements;
@@ -230,7 +235,7 @@ export default async function ClientDetailPage({
                 locked={invoiceLocked}
               /></CompletedMilestone> : <InvoiceSection clientId={client.id} portalId={portal.id} invoice={latestInvoice} locked={invoiceLocked}/>}
             </div>
-            {handoffReadiness ? <LaunchHandoffSection key={handoffPacket?.id ?? "no-handoff-packet"} portalId={portal.id} clientId={client.id} workflowStage={client.workflowStage} readiness={handoffReadiness} packet={handoffPacket ? { id: handoffPacket.id, version: handoffPacket.version, status: handoffPacket.status, recipientName: handoffPacket.recipientName, recipientEmail: handoffPacket.recipientEmail, draftData: handoffPacket.draftData, issuedAt: handoffPacket.issuedAt?.toISOString() ?? null, snapshotHash: handoffPacket.snapshotHash, tokenExpiresAt: handoffPacket.tokenExpiresAt?.toISOString() ?? null, templateRevision: { revision: handoffPacket.templateRevision.revision }, checklistItems: handoffPacket.checklistItems.map((item) => ({ id: item.id, key: item.key, label: item.label, category: item.category, required: item.required, status: item.status, note: item.note })) } : null} /> : null}
+            {handoffReadiness ? <LaunchHandoffSection key={handoffPacket?.id ?? "no-handoff-packet"} portalId={portal.id} clientId={client.id} workflowStage={client.workflowStage} readiness={handoffReadiness} latestPublishedTemplateRevision={latestPublishedHandoffRevision?.revision ?? null} draftTemplateRevision={latestDraftHandoffRevision} packet={handoffPacket ? { id: handoffPacket.id, version: handoffPacket.version, status: handoffPacket.status, recipientName: handoffPacket.recipientName, recipientEmail: handoffPacket.recipientEmail, draftData: handoffPacket.draftData, issuedAt: handoffPacket.issuedAt?.toISOString() ?? null, snapshotHash: handoffPacket.snapshotHash, tokenExpiresAt: handoffPacket.tokenExpiresAt?.toISOString() ?? null, firstSentAt:handoffPacket.firstSentAt?.toISOString()??null,lastSentAt:handoffPacket.lastSentAt?.toISOString()??null,firstViewedAt:handoffPacket.firstViewedAt?.toISOString()??null,lastViewedAt:handoffPacket.lastViewedAt?.toISOString()??null,viewCount:handoffPacket.viewCount,completedAt:handoffPacket.completedAt?.toISOString()??null, acceptance:handoffPacket.acceptance?{typedName:handoffPacket.acceptance.typedName,signerTitle:handoffPacket.acceptance.signerTitle,acceptedAt:handoffPacket.acceptance.acceptedAt.toISOString()}:null,emailAttempts:handoffPacket.emailAttempts.map(a=>({id:a.id,kind:a.kind,status:a.status,recipientEmail:a.recipientEmail,attemptedAt:a.attemptedAt.toISOString(),sentAt:a.sentAt?.toISOString()??null,errorMessage:a.errorMessage,providerMessageId:a.providerMessageId})), templateRevision: { revision: handoffPacket.templateRevision.revision, schemaVersion: handoffPacket.templateRevision.schemaVersion }, checklistItems: handoffPacket.checklistItems.map((item) => ({ id: item.id, key: item.key, label: item.label, category: item.category, required: item.required, status: item.status, note: item.note })), documents: handoffPacket.snapshot ? (handoffDocumentUnits(handoffPacket.snapshot) as {key:string;title:string;filename:string}[]).map(({key,title,filename})=>({key,title,filename})) : [] } : null} /> : null}
           </>
         ) : portalLocked ? (
           <div id="section-portal">

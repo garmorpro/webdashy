@@ -16,17 +16,45 @@ export const HANDOFF_VISIBILITIES = ["PRIVATE", "PUBLIC", "INTERNAL"];
 export const HANDOFF_CARE_DISPOSITIONS = ["", "ENROLLED", "DECLINED", "INCLUDED", "NOT_APPLICABLE"];
 export const HANDOFF_CHECKLIST_STATUSES = ["PENDING", "COMPLETED", "WAIVED", "NOT_APPLICABLE"];
 
+const HANDOFF_DATE_FIELDS = new Set([
+  "projectSummary.approvedDate",
+  "projectSummary.paymentCompletionDate",
+  "websiteLaunch.launchDate",
+  "warranty.startDate",
+  "warranty.endDate",
+]);
+import { normalizeSelectedPolicyKeys } from "./handoff-policy-modules.mjs";
+
 const record = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 const text = (value) => typeof value === "string" ? value : "";
-const section = (value, fields) => {
+const validCalendarDate = (value) => {
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.valueOf()) && parsed.toISOString().slice(0, 10) === value;
+};
+export function normalizeHandoffDate(value) {
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "string") return value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) || !validCalendarDate(value.slice(0, 10))) return value;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.valueOf()) ? value : parsed.toISOString().slice(0, 10);
+}
+
+const section = (name, value, fields) => {
   const source = record(value) ? value : value === null || value === undefined ? {} : { _legacyValue: value };
-  return { ...source, ...Object.fromEntries(fields.map((key) => [key, text(source[key])])) };
+  return {
+    ...source,
+    ...Object.fromEntries(fields.map((key) => {
+      const path = `${name}.${key}`;
+      return [key, HANDOFF_DATE_FIELDS.has(path) ? normalizeHandoffDate(source[key]) : text(source[key])];
+    })),
+  };
 };
 
 export function normalizeHandoffDraft(value) {
   const source = record(value) ? value : {};
   const normalized = { ...source };
-  for (const [name, fields] of Object.entries(HANDOFF_SECTION_FIELDS)) normalized[name] = section(source[name], fields);
+  for (const [name, fields] of Object.entries(HANDOFF_SECTION_FIELDS)) normalized[name] = section(name, source[name], fields);
   normalized.thirdPartyServices = Array.isArray(source.thirdPartyServices)
     ? source.thirdPartyServices.map((value) => {
       const row = record(value) ? value : { _legacyValue: value };
@@ -37,6 +65,8 @@ export function normalizeHandoffDraft(value) {
       };
     })
     : [];
+  normalized.selectedPolicyKeys = normalizeSelectedPolicyKeys(source.selectedPolicyKeys);
+  normalized.adminNote = text(source.adminNote);
   return normalized;
 }
 
@@ -56,6 +86,8 @@ export function mergeHandoffDraft(current, edits) {
         billingOwner: text(row?.billingOwner), dataHandled: text(row?.dataHandled),
       }))
     : [];
+  if (record(edits) && Object.hasOwn(edits, "selectedPolicyKeys")) result.selectedPolicyKeys = normalizeSelectedPolicyKeys(edits.selectedPolicyKeys);
+  if (record(edits) && Object.hasOwn(edits, "adminNote")) result.adminNote = text(edits.adminNote);
   return result;
 }
 
@@ -77,6 +109,8 @@ export function validateHandoffDraft(draft) {
   if (hasSecretLookingKey(draft)) throw new Error("Secret-looking fields are not allowed in handoff data.");
   for (const name of Object.keys(HANDOFF_SECTION_FIELDS)) if (!record(draft[name])) throw new Error(`Invalid ${name} section.`);
   if (!Array.isArray(draft.thirdPartyServices)) throw new Error("Third-party services must be an array.");
+  draft.selectedPolicyKeys = normalizeSelectedPolicyKeys(draft.selectedPolicyKeys);
+  if (typeof draft.adminNote !== "string" || draft.adminNote.length > 5000) throw new Error("Admin note must be text under 5000 characters.");
 
   const allText = [];
   for (const [name, fields] of Object.entries(HANDOFF_SECTION_FIELDS)) {
@@ -97,7 +131,7 @@ export function validateHandoffDraft(draft) {
   for (const [name, key] of [["projectSummary", "approvedDate"], ["projectSummary", "paymentCompletionDate"], ["websiteLaunch", "launchDate"], ["warranty", "startDate"], ["warranty", "endDate"]]) {
     const value = draft[name][key];
     if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`${name}.${key} must use YYYY-MM-DD.`);
-    if (value) { const parsed = new Date(`${value}T00:00:00Z`); if (Number.isNaN(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== value) throw new Error(`${name}.${key} is not a valid date.`); }
+    if (value && !validCalendarDate(value)) throw new Error(`${name}.${key} is not a valid date.`);
   }
   if (!HANDOFF_LAUNCH_STATUSES.includes(draft.websiteLaunch.status)) throw new Error("Invalid launch status.");
   if (draft.sourceCode.visibility && !HANDOFF_VISIBILITIES.includes(draft.sourceCode.visibility)) throw new Error("Invalid repository visibility.");
@@ -114,6 +148,49 @@ export function validateHandoffDraft(draft) {
     if (hasSecretLookingKey(row)) throw new Error("Secret-looking fields are not allowed in third-party services.");
   });
   return draft;
+}
+
+function validateOptionalText(value, label, maxLength = 5000) {
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "string" || value.length > maxLength) throw new Error(`${label} must be text under ${maxLength} characters.`);
+  return value;
+}
+
+function validateDate(value, path) {
+  if (!value) return;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) throw new Error(`${path} must use YYYY-MM-DD.`);
+  if (!validCalendarDate(value)) throw new Error(`${path} is not a valid date.`);
+}
+
+export function validateHandoffWizardStep(draft, step) {
+  if (!record(draft)) throw new Error("Packet data must be an object.");
+  if (hasSecretLookingKey(draft)) throw new Error("Secret-looking fields are not allowed in handoff data.");
+  if (step === 1) {
+    if (!Array.isArray(draft.selectedPolicyKeys) || draft.selectedPolicyKeys.some((key) => typeof key !== "string")) throw new Error("Selected packet documents are invalid.");
+    draft.selectedPolicyKeys = normalizeSelectedPolicyKeys(draft.selectedPolicyKeys);
+    if (!draft.selectedPolicyKeys.length) throw new Error("Select at least one packet document.");
+    return draft;
+  }
+  if (step === 2) {
+    const launch = record(draft.websiteLaunch) ? draft.websiteLaunch : {};
+    const domain = record(draft.domain) ? draft.domain : {};
+    const care = record(draft.maintenanceSupport) ? draft.maintenanceSupport : {};
+    const warranty = record(draft.warranty) ? draft.warranty : {};
+    launch.liveUrl = validateOptionalText(launch.liveUrl, "Final live URL");
+    domain.primaryDomain = validateOptionalText(domain.primaryDomain, "Domain");
+    care.clientCareDisposition = validateOptionalText(care.clientCareDisposition, "Client Care choice");
+    warranty.endDate = validateOptionalText(warranty.endDate, "Warranty end date");
+    draft.adminNote = validateOptionalText(draft.adminNote, "Admin note");
+    if (launch.liveUrl) {
+      try { const url = new URL(launch.liveUrl); if (!['http:', 'https:'].includes(url.protocol)) throw new Error(); }
+      catch { throw new Error(`Invalid URL: ${launch.liveUrl}`); }
+    }
+    if (!HANDOFF_CARE_DISPOSITIONS.includes(care.clientCareDisposition)) throw new Error("Invalid Client Care disposition.");
+    validateDate(warranty.endDate, "warranty.endDate");
+    return draft;
+  }
+  if (step === 3) return draft;
+  throw new Error("Invalid handoff wizard step.");
 }
 
 export function assertDraftEditable(status) {
@@ -135,18 +212,40 @@ export function resolveChecklistDefaults(items, facts) {
   const formsEmailRecorded = /(form|email|mail|newsletter|crm)/.test(serviceText);
   const automatic = {
     final_live_url: facts.liveUrl ? "COMPLETED" : null,
+    github_access: facts.websiteProvisioningSucceeded ? "COMPLETED" : null,
+    netlify_access: facts.netlifyProvisioningSucceeded ? "COMPLETED" : null,
     third_party_services: services.length === 0 ? "NOT_APPLICABLE" : null,
     analytics_access: analyticsRecorded ? null : "NOT_APPLICABLE",
     forms_email_access: formsEmailRecorded ? null : "NOT_APPLICABLE",
+    client_care_selection: text(facts.clientCareDisposition).trim() ? "COMPLETED" : null,
   };
   return items.map((item) => item.status === "PENDING" && automatic[item.key] ? { ...item, status: automatic[item.key] } : item);
 }
 
 export function guidedHandoffCompletion(draft, checklist) {
   const normalized = normalizeHandoffDraft(draft), items = Array.isArray(checklist) ? checklist : [];
+  const unresolvedLaunch = items.some((item) => record(item) && item.required && item.key === "final_live_url" && item.status === "PENDING");
   const unresolvedOwnership = items.some((item) => record(item) && item.required && ["domain_access", "domain_ownership", "github_access", "netlify_access"].includes(item.key) && item.status === "PENDING");
-  const launch = Boolean(normalized.websiteLaunch.liveUrl.trim()) && Boolean(normalized.websiteLaunch.status) && normalized.websiteLaunch.status !== "PENDING_LAUNCH";
+  const launch = Boolean(normalized.websiteLaunch.liveUrl.trim()) && Boolean(normalized.websiteLaunch.status) && normalized.websiteLaunch.status !== "PENDING_LAUNCH" && !unresolvedLaunch;
   const ownership = [normalized.domain.owner, normalized.domain.registrar, normalized.domain.renewalResponsibility, normalized.domain.dnsManager, normalized.domain.transferAccessStatus].every((value) => value.trim()) && normalized.domain.transferAccessStatus !== "PENDING" && !unresolvedOwnership;
   const care = Boolean(normalized.maintenanceSupport.clientCareDisposition);
   return [launch, ownership, care, false];
+}
+
+export function initialHandoffWizardStep(completion) {
+  const firstIncomplete = completion.slice(0, 3).findIndex((done) => !done);
+  return firstIncomplete === -1 ? 4 : firstIncomplete + 1;
+}
+
+export function handoffWizardStepAfterSave(currentStep, completion, saveSucceeded) {
+  if (!saveSucceeded || currentStep === 4 || !completion[currentStep - 1]) return currentStep;
+  return currentStep + 1;
+}
+
+export function canNavigateToHandoffStep(targetStep, currentStep, completion) {
+  return targetStep === currentStep || targetStep < currentStep && Boolean(completion[targetStep - 1]);
+}
+
+export function shouldUseEditableHandoffWizard(packetStatus) {
+  return packetStatus === "DRAFT";
 }

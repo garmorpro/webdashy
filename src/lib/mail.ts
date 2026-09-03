@@ -10,12 +10,10 @@ import {
   renderQuestionnaireSubmittedEmail,
   renderPortalEmail,
 } from "@/lib/email-templates";
+import { handoffEmailMessage } from "@/lib/services/handoff-email-message.mjs";
+import { isEmailDryRunEnabled } from "@/lib/services/handoff-dry-run.mjs";
 
 let transporter: nodemailer.Transporter | null | undefined;
-
-function isEmailDryRun(): boolean {
-  return process.env.EMAIL_DRY_RUN === "true";
-}
 
 function logEmailDryRun(emailType: string, to: string | undefined): void {
   console.info(`[EMAIL DRY RUN] ${emailType} to ${to ?? "unconfigured recipient"}`);
@@ -59,7 +57,7 @@ export async function sendSelectionNotification({
   selectedAt: Date;
   clientAdminUrl: string;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun(
       "Selection notification email",
       process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER
@@ -111,6 +109,14 @@ export async function sendSelectionNotification({
   }
 }
 
+export async function sendHandoffEmail({ to, contactName, handoffUrl, zipBuffer, zipFilename, pdfBuffer, pdfFilename, projectName, accepted = false }: { to:string; contactName:string; handoffUrl:string; zipBuffer?:Buffer; zipFilename?:string; pdfBuffer?:Buffer; pdfFilename?:string; projectName?:string; accepted?:boolean }): Promise<{messageId:string|null}> {
+  if (isEmailDryRunEnabled()) { logEmailDryRun(pdfBuffer ? "Client Agreement" : accepted ? "Accepted handoff copy" : "Handoff packet", to); return { messageId: "dry-run" }; }
+  const t=getTransporter(); if(!t) throw new Error("Email isn't configured (GMAIL_USER / GMAIL_APP_PASSWORD missing).");
+  const message=handoffEmailMessage({contactName,handoffUrl,zipBuffer,zipFilename,pdfBuffer,pdfFilename,projectName,accepted});
+  const info=await t.sendMail({from:`WebDashy <${getFromAddress()}>`,to,...message});
+  return {messageId:typeof info.messageId === "string" ? info.messageId : null};
+}
+
 function getFromAddress(): string | undefined {
   return process.env.MAIL_FROM || process.env.GMAIL_USER;
 }
@@ -149,7 +155,7 @@ export async function sendInvoiceEmail({
   paymentInstructions: string | null;
   pdfBuffer: Buffer;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun("Invoice email", to);
     return;
   }
@@ -195,7 +201,7 @@ export async function sendDeliveryReviewEmail({
   stagingUrl: string;
   reviewUrl: string;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun("Client review email", to);
     return;
   }
@@ -231,7 +237,7 @@ export async function sendPasswordResetEmail({
   name: string;
   resetUrl: string;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun("Password reset email", to);
     return;
   }
@@ -268,7 +274,7 @@ export async function sendReviewOutcomeNotification({
   feedback: string | null;
   clientAdminUrl: string;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun(
       "Review outcome notification email",
       process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER
@@ -316,7 +322,7 @@ export async function sendQuestionnaireEmail({
   businessName: string;
   formUrl: string;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun("Questionnaire email", to);
     return;
   }
@@ -356,7 +362,7 @@ export async function sendPortalEmail({
   portalUrl: string;
   message: string | null;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun("Portal email", to);
     return;
   }
@@ -389,7 +395,7 @@ export async function sendQuestionnaireSubmittedNotification({
   clientName: string;
   clientAdminUrl: string;
 }): Promise<void> {
-  if (isEmailDryRun()) {
+  if (isEmailDryRunEnabled()) {
     logEmailDryRun(
       "Questionnaire submitted notification email",
       process.env.NOTIFY_EMAIL_TO || process.env.GMAIL_USER
