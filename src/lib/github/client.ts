@@ -69,3 +69,78 @@ export async function generateRepository(input: { sourceOwner: string; sourceNam
   const token = await installationToken();
   return request<Repo>(`/repos/${encodeURIComponent(input.sourceOwner)}/${encodeURIComponent(input.sourceName)}/generate`, { method: "POST", token, body: JSON.stringify({ owner: input.targetOwner, name: input.targetName, private: input.private, include_all_branches: false }) }, true);
 }
+
+type GitHubContentFile = {
+  type: "file";
+  encoding: "base64";
+  content: string;
+  sha: string;
+  path: string;
+};
+
+export async function getRepositoryFile(
+  owner: string,
+  repo: string,
+  path: string,
+  ref?: string
+): Promise<{ content: string; sha: string } | null> {
+  const token = await installationToken();
+  const suffix = ref ? `?ref=${encodeURIComponent(ref)}` : "";
+
+  try {
+    const result = await request<GitHubContentFile>(
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/")}${suffix}`,
+      { method: "GET", token }
+    );
+
+    if (result.data.type !== "file" || result.data.encoding !== "base64") {
+      throw new GitHubApiError(
+        "GITHUB_CONTENT_UNSUPPORTED",
+        `GitHub returned an unsupported content response for ${path}.`,
+        result.requestId
+      );
+    }
+
+    return {
+      content: Buffer.from(result.data.content.replace(/\n/g, ""), "base64").toString("utf8"),
+      sha: result.data.sha,
+    };
+  } catch (error) {
+    if (error instanceof GitHubApiError && error.code === "GITHUB_404") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export async function putRepositoryFile(input: {
+  owner: string;
+  repo: string;
+  path: string;
+  branch: string;
+  message: string;
+  content: string;
+  sha?: string;
+}) {
+  const token = await installationToken();
+
+  return request<{ content?: { sha?: string }; commit?: { sha?: string } }>(
+    `/repos/${encodeURIComponent(input.owner)}/${encodeURIComponent(input.repo)}/contents/${input.path
+      .split("/")
+      .map(encodeURIComponent)
+      .join("/")}`,
+    {
+      method: "PUT",
+      token,
+      body: JSON.stringify({
+        message: input.message,
+        content: Buffer.from(input.content, "utf8").toString("base64"),
+        branch: input.branch,
+        ...(input.sha ? { sha: input.sha } : {}),
+      }),
+    }
+  );
+}

@@ -6,6 +6,7 @@ import { getRepository, GitHubApiError } from "@/lib/github/client";
 import { reconciledRepositoryMetadata } from "@/lib/github/repository-reconciliation.mjs";
 import { isWorkflowStageAtLeast } from "@/lib/workflow";
 import { createLinkedSite, getNetlifyConfig, getSite, listRecentDeploys, NetlifyApiError, type NetlifyDeploy, type NetlifySite } from "@/lib/netlify/client";
+import { configureClientSiteRepository } from "@/lib/github/configure-client-site";
 import { classifyDeployState, isPublicRepositoryEligible, siteNameCandidate } from "@/lib/netlify/provisioning-state.mjs";
 
 type Result = { ok: true; message: string } | { ok: false; message: string; code: string };
@@ -131,7 +132,63 @@ export async function provisionNetlify(input: { websiteProvisioningId: string; p
       catch (error) { if (!(error instanceof NetlifyApiError && error.status === 422 && candidate < 5)) throw error; }
     }
     if (!created) throw new NetlifyApiError("NETLIFY_SITE_NAME_UNAVAILABLE", "Netlify could not allocate a unique site name.", 422, false, false, { limit: null, remaining: null, reset: null, retryAfter: null });
-    const saved = await db.netlifyProvisioning.update({ where: { id: row.id }, data: { status: "DEPLOYING", netlifySiteId: created.id, siteName: created.name || chosenName, adminUrl: created.admin_url, siteUrl: created.url, sslUrl: created.ssl_url, initialBuildId: created.build_id, initialDeployId: created.deploy_id, initialDeployState: created.state, siteCreatedAt: new Date(), leaseExpiresAt: null }, include: { websiteProvisioning: { include: { buildSetup: { select: { portalId: true } } } } } });
+
+    const saved = await db.netlifyProvisioning.update({
+      where: { id: row.id },
+      data: {
+        status: "DEPLOYING",
+        netlifySiteId: created.id,
+        siteName: created.name || chosenName,
+        adminUrl: created.admin_url,
+        siteUrl: created.url,
+        sslUrl: created.ssl_url,
+        initialBuildId: created.build_id,
+        initialDeployId: created.deploy_id,
+        initialDeployState: created.state,
+        siteCreatedAt: new Date(),
+        leaseExpiresAt: null,
+      },
+      include: {
+        websiteProvisioning: {
+          include: {
+            buildSetup: {
+              select: { portalId: true },
+            },
+          },
+        },
+      },
+    });
+
+    const clientSiteUrl = created.ssl_url || created.url;
+    if (!clientSiteUrl) {
+      throw new NetlifyApiError(
+        "NETLIFY_SITE_URL_MISSING",
+        "Netlify created the site but did not return a usable site URL.",
+        null,
+        false,
+        false,
+        { limit: null, remaining: null, reset: null, retryAfter: null }
+      );
+    }
+
+    try {
+      await configureClientSiteRepository({
+        owner: project.targetOwner,
+        repo: project.targetRepositoryName,
+        branch: project.defaultBranch!,
+        siteUrl: clientSiteUrl,
+      });
+    } catch (error) {
+      console.error("Client repository configuration failed:", error);
+      throw new NetlifyApiError(
+        "CLIENT_REPOSITORY_CONFIGURATION_FAILED",
+        "Netlify created the site, but WebDashy could not configure the generated client repository.",
+        null,
+        false,
+        false,
+        { limit: null, remaining: null, reset: null, retryAfter: null }
+      );
+    }
     try {
       const deploys = (await listRecentDeploys(created.id)).data;
       return saveDeployState(saved, created, deployFrom(created, deploys));
@@ -146,9 +203,77 @@ export async function provisionNetlify(input: { websiteProvisioningId: string; p
 }
 
 export async function reconcileNetlify(input: { netlifyProvisioningId: string; portalId: string; clientId: string }): Promise<Result> {
-  const row = await db.netlifyProvisioning.findFirst({ where: { id: input.netlifyProvisioningId, websiteProvisioning: { buildSetup: { portalId: input.portalId, portal: { clientId: input.clientId } } } }, include: { websiteProvisioning: { include: { buildSetup: { select: { portalId: true } } } } } });
-  if (!row) return { ok: false, code: "NETLIFY_PROVISIONING_NOT_FOUND", message: "Netlify provisioning was not found for this client." };
-  if (!row.netlifySiteId) return { ok: false, code: "MANUAL_RECONCILIATION_REQUIRED", message: "No Netlify site ID was recorded. Inspect Netlify manually; a second site will not be created automatically." };
-  try { const [site, deploys] = await Promise.all([getSite(row.netlifySiteId), listRecentDeploys(row.netlifySiteId)]); return saveDeployState(row, site.data, deployFrom(site.data, deploys.data)); }
-  catch (error) { const safe = safeError(error); return { ok: false, code: safe.code, message: safe.message }; }
+  const row = await db.netlifyProvisioning.findFirst({
+    where: {
+      id: input.netlifyProvisioningId,
+      websiteProvisioning: {
+        buildSetup: {
+          portalId: input.portalId,
+          portal: { clientId: input.clientId },
+        },
+      },
+    },
+    include: {
+      websiteProvisioning: {
+        include: {
+          buildSetup: {
+            select: { portalId: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!row) {
+    return {
+      ok: false,
+      code: "NETLIFY_PROVISIONING_NOT_FOUND",
+      message: "Netlify provisioning was not found for this client.",
+    };
+  }
+
+  if (!row.netlifySiteId) {
+    return {
+      ok: false,
+      code: "MANUAL_RECONCILIATION_REQUIRED",
+      message:
+        "No Netlify site ID was recorded. Inspect Netlify manually; a second site will not be created automatically.",
+    };
+  }
+
+  try {
+    const [site, deploys] = await Promise.all([
+      getSite(row.netlifySiteId),
+      listRecentDeploys(row.netlifySiteId),
+    ]);
+
+    const siteUrl = site.data.ssl_url || site.data.url;
+    if (siteUrl) {
+      try {
+        await configureClientSiteRepository({
+          owner: row.websiteProvisioning.targetOwner,
+          repo: row.websiteProvisioning.targetRepositoryName,
+          branch: row.repositoryBranch,
+          siteUrl,
+        });
+      } catch (error) {
+        console.error("Client repository reconciliation failed:", error);
+        return {
+          ok: false,
+          code: "CLIENT_REPOSITORY_CONFIGURATION_FAILED",
+          message:
+            "Netlify is connected, but WebDashy could not update the client repository configuration.",
+        };
+      }
+    }
+
+    return saveDeployState(
+      row,
+      site.data,
+      deployFrom(site.data, deploys.data)
+    );
+  } catch (error) {
+    const safe = safeError(error);
+    return { ok: false, code: safe.code, message: safe.message };
+  }
 }

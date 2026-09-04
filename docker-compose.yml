@@ -31,6 +31,8 @@ services:
     build: .
     restart: unless-stopped
     env_file: .env
+    volumes:
+      - /home/garrett/.config/webdashy/github-app.pem:/run/secrets/webdashy-github-app.pem:ro
     depends_on:
       db:
         condition: service_healthy
