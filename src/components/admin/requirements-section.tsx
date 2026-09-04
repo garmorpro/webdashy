@@ -52,6 +52,14 @@ export function RequirementsSection({
   const [state, formAction] = useActionState(action, {});
   const [editing, setEditing] = useState(!requirements);
 
+  const initialPages =
+    requirements?.pages.join(", ") ?? questionnaireDefaults?.pages ?? "";
+  const [pagesText, setPagesText] = useState(initialPages);
+  const pageCount = pagesText
+    .split(",")
+    .map((page) => page.trim())
+    .filter(Boolean).length;
+
   const questionnaireLaunchDate = (() => {
     const raw = questionnaireDefaults?.launchTimeline?.trim();
     if (!raw) return "";
@@ -125,12 +133,18 @@ export function RequirementsSection({
       ) : null}
 
       <div className="space-y-1.5">
-        <Label htmlFor="req-pages">Pages needed</Label>
+        <div className="flex items-center justify-between gap-3">
+          <Label htmlFor="req-pages">Pages needed</Label>
+          <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            {pageCount} {pageCount === 1 ? "page" : "pages"}
+          </span>
+        </div>
         <Input
           id="req-pages"
           name="pages"
           placeholder="Home, About, Services, Gallery, Contact"
-          defaultValue={requirements?.pages.join(", ") ?? questionnaireDefaults?.pages ?? ""}
+          value={pagesText}
+          onChange={(event) => setPagesText(event.target.value)}
         />
         <p className="text-xs text-muted-foreground">Comma-separated.</p>
       </div>
