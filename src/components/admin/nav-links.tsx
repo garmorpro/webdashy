@@ -17,8 +17,18 @@ export function NavLinks({
   return (
     <nav className="flex flex-col gap-1">
       {items.map((item) => {
+        const isClientCareWorkspace =
+          /^\/clients\/[^/]+\/client-care(?:\/|$)/.test(pathname);
+
         const isActive =
-          item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+          item.href === "/client-care"
+            ? pathname.startsWith("/client-care") || isClientCareWorkspace
+            : item.href === "/clients"
+              ? pathname.startsWith("/clients") && !isClientCareWorkspace
+              : item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+
         const Icon = item.icon;
 
         return (

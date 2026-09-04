@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Users,
+  HeartHandshake,
   Settings,
 } from "lucide-react";
 
@@ -23,6 +24,7 @@ export const navItems: NavItem[] = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
   { title: "Templates", href: "/templates", icon: LayoutTemplate },
   { title: "Clients", href: "/clients", icon: Users },
+  { title: "Client Care", href: "/client-care", icon: HeartHandshake },
 ];
 
 export const systemNavItems: NavItem[] = [
