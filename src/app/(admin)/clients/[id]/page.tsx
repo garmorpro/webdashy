@@ -15,13 +15,12 @@ import { NetlifyProvisioningSection } from "@/components/admin/netlify-provision
 import { InvoiceSection } from "@/components/admin/invoice-section";
 import { DeliverySection } from "@/components/admin/delivery-section";
 import { SectionLocked } from "@/components/admin/section-locked";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { updateClient } from "@/lib/actions/clients";
 import { pipelineStepIndex } from "@/lib/client-status";
 import { avatarColorsFor, initialsFor } from "@/lib/avatar-colors";
 import { getAbsoluteUrl } from "@/lib/site-url";
-import { isWorkflowStageAtLeast, WORKFLOW_STAGE_LABELS } from "@/lib/workflow";
+import { isWorkflowStageAtLeast } from "@/lib/workflow";
 import { LaunchHandoffSection } from "@/components/admin/launch-handoff-section";
 import { getHandoffReadiness } from "@/lib/services/handoff-packets";
 import { CompletedMilestone } from "@/components/admin/completed-milestone";
@@ -125,12 +124,11 @@ export default async function ClientDetailPage({
             </p>
           </div>
         </div>
-        <div className="flex shrink-0 items-center gap-2.5">
-          <Badge variant="secondary">
-            {WORKFLOW_STAGE_LABELS[client.workflowStage]}
-          </Badge>
-          <DeleteClientButton clientId={client.id} clientName={client.businessName} iconOnly />
-        </div>
+        <DeleteClientButton
+          clientId={client.id}
+          clientName={client.businessName}
+          iconOnly
+        />
       </div>
 
       <div className="mb-6">
