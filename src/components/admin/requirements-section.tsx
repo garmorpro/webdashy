@@ -34,15 +34,34 @@ export function RequirementsSection({
   clientId,
   requirements,
   locked,
+  questionnaireDefaults,
 }: {
   portalId: string;
   clientId: string;
   requirements: ProjectRequirements | null;
   locked: boolean;
+  questionnaireDefaults?: {
+    pages: string;
+    launchTimeline: string;
+    customerActions: string;
+    pagesNeedingUpdates: string;
+    googleAnalytics: string;
+  } | null;
 }) {
   const action = saveRequirements.bind(null, portalId, clientId);
   const [state, formAction] = useActionState(action, {});
   const [editing, setEditing] = useState(!requirements);
+
+  const questionnaireLaunchDate = (() => {
+    const raw = questionnaireDefaults?.launchTimeline?.trim();
+    if (!raw) return "";
+
+    const match = raw.match(/\b(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})\b/);
+    if (!match) return "";
+
+    const [, month, day, year] = match;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  })();
 
   // Close the form back to the summary view on a successful save. Adjusted
   // during render (comparing against the last-seen state) rather than in a
@@ -111,7 +130,7 @@ export function RequirementsSection({
           id="req-pages"
           name="pages"
           placeholder="Home, About, Services, Gallery, Contact"
-          defaultValue={requirements?.pages.join(", ") ?? ""}
+          defaultValue={requirements?.pages.join(", ") ?? questionnaireDefaults?.pages ?? ""}
         />
         <p className="text-xs text-muted-foreground">Comma-separated.</p>
       </div>
@@ -163,11 +182,57 @@ export function RequirementsSection({
             defaultValue={
               requirements?.targetLaunchDate
                 ? requirements.targetLaunchDate.toISOString().slice(0, 10)
-                : ""
+                : questionnaireLaunchDate
             }
           />
         </div>
       </div>
+
+      {questionnaireDefaults ? (
+        <div className="rounded-xl border bg-muted/30 p-4">
+          <div className="text-sm font-semibold text-foreground">
+            Questionnaire context
+          </div>
+
+          <div className="mt-3 grid gap-3 text-sm">
+            {questionnaireDefaults.launchTimeline ? (
+              <div>
+                <span className="font-medium">Launch timeline:</span>{" "}
+                <span className="text-muted-foreground">
+                  {questionnaireDefaults.launchTimeline}
+                </span>
+              </div>
+            ) : null}
+
+            {questionnaireDefaults.customerActions ? (
+              <div>
+                <span className="font-medium">Customer actions:</span>{" "}
+                <span className="text-muted-foreground">
+                  {questionnaireDefaults.customerActions}
+                </span>
+              </div>
+            ) : null}
+
+            {questionnaireDefaults.pagesNeedingUpdates ? (
+              <div>
+                <span className="font-medium">Ongoing updates:</span>{" "}
+                <span className="text-muted-foreground">
+                  {questionnaireDefaults.pagesNeedingUpdates}
+                </span>
+              </div>
+            ) : null}
+
+            {questionnaireDefaults.googleAnalytics ? (
+              <div>
+                <span className="font-medium">Google Analytics:</span>{" "}
+                <span className="text-muted-foreground">
+                  {questionnaireDefaults.googleAnalytics}
+                </span>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <div className="space-y-1.5">
         <Label htmlFor="req-notes">Additional notes</Label>

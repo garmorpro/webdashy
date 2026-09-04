@@ -95,7 +95,27 @@ export default async function ClientDetailPage({
 
   const dateFormatter = new Intl.DateTimeFormat("en-US", { dateStyle: "medium" });
   const avatarColors = avatarColorsFor(client.businessName);
-  const questionnaireAnswered = client.questionnaire?.answers && typeof client.questionnaire.answers === "object" && !Array.isArray(client.questionnaire.answers) ? countAnsweredFields(client.questionnaire.answers as QuestionnaireAnswers) : 0;
+  const questionnaireAnswers =
+    client.questionnaire?.answers &&
+    typeof client.questionnaire.answers === "object" &&
+    !Array.isArray(client.questionnaire.answers)
+      ? (client.questionnaire.answers as QuestionnaireAnswers)
+      : null;
+
+  const questionnaireAnswered = questionnaireAnswers
+    ? countAnsweredFields(questionnaireAnswers)
+    : 0;
+
+  const questionnaireDefaults = questionnaireAnswers
+    ? {
+        pages: questionnaireAnswers.desiredPages ?? "",
+        launchTimeline: questionnaireAnswers.launchTimeline ?? "",
+        customerActions: questionnaireAnswers.customerActions ?? "",
+        pagesNeedingUpdates: questionnaireAnswers.pagesNeedingUpdates ?? "",
+        googleAnalytics: questionnaireAnswers.googleAnalytics ?? "",
+      }
+    : null;
+
   const invoiceTotal = latestInvoice ? latestInvoice.lineItems.reduce((sum, item) => sum + Number(item.amount), Number(latestInvoice.taxAmount)) : 0;
 
   return (
@@ -188,7 +208,8 @@ export default async function ClientDetailPage({
                 clientId={client.id}
                 requirements={portal.requirements}
                 locked={requirementsLocked}
-              /></CompletedMilestone> : <RequirementsSection portalId={portal.id} clientId={client.id} requirements={portal.requirements} locked={requirementsLocked}/>}
+                questionnaireDefaults={questionnaireDefaults}
+              /></CompletedMilestone> : <RequirementsSection portalId={portal.id} clientId={client.id} requirements={portal.requirements} locked={requirementsLocked} questionnaireDefaults={questionnaireDefaults}/>}
 
               {portal.buildSetup?.status === "CONFIRMED" ? <CompletedMilestone title="Build Setup" summary={`Confirmed ${portal.buildSetup.confirmedAt ? dateFormatter.format(portal.buildSetup.confirmedAt) : ""}`}><BuildSetupSection
                 portalId={portal.id}
