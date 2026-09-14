@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Automation } from "@/components/marketing/automation";
 import { CustomerProblems } from "@/components/marketing/customer-problems";
+import { MobileCrm } from "@/components/marketing/mobile-crm";
 import { Hero } from "@/components/marketing/hero";
 import { WebsiteDesign } from "@/components/marketing/website-design";
 import { WebDashySystem } from "@/components/marketing/webdashy-system";
@@ -19,6 +20,7 @@ export default function HomePage() {
       <WebDashySystem />
       <WebsiteDesign />
       <Automation />
+      <MobileCrm />
     </>
   );
 }

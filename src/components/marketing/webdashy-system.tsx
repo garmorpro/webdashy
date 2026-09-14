@@ -10,8 +10,8 @@ const services = [
 
 export function ServiceFlowDiagram() {
   return (
-    <figure className={styles.diagram} aria-label="Four connected services feeding into the WebDashy Mobile App / CRM">
-      <p className="sr-only">All four services below connect to the Mobile App / CRM, where you manage leads, conversations, contacts, and follow-up.</p>
+    <figure className={styles.diagram} aria-label="Four connected services feeding into Mobile CRM Access">
+      <p className="sr-only">All four services below connect to the Mobile CRM Access, where you manage leads, conversations, contacts, and follow-up.</p>
       <div className={styles.flow}>
         <ul className={styles.services}>
           {services.map(({ title, description, icon: Icon, companion: Companion }) => (
@@ -39,7 +39,7 @@ export function ServiceFlowDiagram() {
           <span className="mx-auto flex size-16 items-center justify-center rounded-2xl bg-[#a4ff4f] text-[#1b2951] shadow-[0_4px_16px_-8px_rgba(27,41,81,0.3)]">
             <Smartphone size={34} strokeWidth={1.6} aria-hidden="true" />
           </span>
-          <h3 className="mt-5 text-2xl font-extrabold tracking-[-0.035em] sm:text-3xl">Mobile App / CRM</h3>
+          <h3 className="mt-5 text-2xl font-extrabold tracking-[-0.035em] sm:text-3xl">Mobile CRM Access</h3>
           <p className="mx-auto mt-3 max-w-72 text-[15px] leading-[1.8] text-[#606a7d]">Leads. Conversations. Contacts. Follow-Up. All in one place.</p>
         </div>
       </div>
