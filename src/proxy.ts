@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-// Protects every admin route. The public portal (/p/[token]), the delivery
+// Protects every admin route. The marketing homepage (/), public portal (/p/[token]), the delivery
 // review page (/r/[token]), the design questionnaire (/q/[token]), the auth
 // routes, and the leads webhook are explicitly excluded — see
 // ARCHITECTURE.md §6: every page/route excluded here must never require
@@ -32,7 +32,7 @@ export default auth((req) => {
 });
 
 export const config = {
-  // Everything except token-authenticated public experiences and assets.
+  // Everything except the marketing homepage, token-authenticated public experiences, and assets.
   // /api/h/ is public; /api/handoff/ remains protected for admins.
-  matcher: ["/((?!p/|r/|q/|h/|api/h/|_next/static|_next/image|brand/|favicon.ico).*)"],
+  matcher: ["/((?!$|p/|r/|q/|h/|api/h/|_next/static|_next/image|brand/|favicon.ico).*)"],
 };
