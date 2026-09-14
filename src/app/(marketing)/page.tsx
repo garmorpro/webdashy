@@ -3,6 +3,7 @@ import { Automation } from "@/components/marketing/automation";
 import { CustomerProblems } from "@/components/marketing/customer-problems";
 import { MobileCrm } from "@/components/marketing/mobile-crm";
 import { ServicesOverview } from "@/components/marketing/services-overview";
+import { HowItWorks } from "@/components/marketing/how-it-works";
 import { Hero } from "@/components/marketing/hero";
 import { WebsiteDesign } from "@/components/marketing/website-design";
 import { WebDashySystem } from "@/components/marketing/webdashy-system";
@@ -23,6 +24,7 @@ export default function HomePage() {
       <Automation />
       <MobileCrm />
       <ServicesOverview />
+      <HowItWorks />
     </>
   );
 }

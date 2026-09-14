@@ -36,7 +36,7 @@ export function ServicesOverview() {
   return (
     <section
       aria-labelledby="services-overview-heading"
-      className="bg-[#1b2951] py-20 text-white sm:py-24 lg:py-28"
+      className="bg-[#1b2951] py-12 text-white sm:py-14 lg:py-16"
     >
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
         <div className="mx-auto max-w-3xl text-center">
@@ -46,34 +46,34 @@ export function ServicesOverview() {
           </p>
           <h2
             id="services-overview-heading"
-            className="mt-6 text-[clamp(2rem,3.6vw,3.25rem)] leading-[1.15] font-extrabold tracking-[-0.045em] text-balance"
+            className="mt-4 text-[clamp(2rem,3.6vw,3.25rem)] leading-[1.15] font-extrabold tracking-[-0.045em] text-balance"
           >
             One System. Four Ways To Help Your Business Grow.
           </h2>
-          <p className="mx-auto mt-6 max-w-[680px] text-base leading-[1.85] text-[#c3cbde] sm:text-[17px]">
+          <p className="mx-auto mt-4 max-w-[680px] text-base leading-[1.85] text-[#c3cbde] sm:text-[17px]">
             WebDashy combines the website, follow-up, reputation, and re-marketing
             tools local businesses need to turn more opportunities into customers.
           </p>
         </div>
 
-        <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-14 xl:grid-cols-4">
+        <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {services.map(({ title, description, cta, href, icon: Icon }) => (
             <li
               key={href}
-              className="group flex flex-col rounded-xl border border-white/15 bg-white/5 p-7 transition-colors duration-200 hover:border-[#a4ff4f]/50 hover:bg-white/10 focus-within:border-[#a4ff4f]/50 sm:p-8 xl:p-7"
+              className="group flex flex-col rounded-xl border border-white/15 bg-white/5 p-5 transition-colors duration-200 hover:border-[#a4ff4f]/50 hover:bg-white/10 focus-within:border-[#a4ff4f]/50"
             >
-              <span className="flex size-14 items-center justify-center rounded-full border border-[#a4ff4f]/20 bg-[#a4ff4f]/10 text-[#a4ff4f]">
-                <Icon size={26} strokeWidth={1.6} aria-hidden="true" />
+              <span className="flex size-11 items-center justify-center rounded-full border border-[#a4ff4f]/20 bg-[#a4ff4f]/10 text-[#a4ff4f]">
+                <Icon size={22} strokeWidth={1.6} aria-hidden="true" />
               </span>
-              <h3 className="mt-8 text-xl leading-snug font-bold tracking-[-0.025em]">
+              <h3 className="mt-4 text-xl leading-snug font-bold tracking-[-0.025em]">
                 {title}
               </h3>
-              <p className="mt-4 mb-8 text-[15px] leading-[1.8] text-[#c3cbde]">
+              <p className="mt-3 mb-4 text-[15px] leading-[1.8] text-[#c3cbde]">
                 {description}
               </p>
               <Link
                 href={href}
-                className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-white/15 pt-5 text-sm leading-relaxed font-semibold text-[#a4ff4f] underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#a4ff4f]"
+                className="mt-auto flex min-h-11 items-center justify-between gap-3 border-t border-white/15 pt-3 text-sm leading-relaxed font-semibold text-[#a4ff4f] underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#a4ff4f]"
               >
                 {cta}
                 <ArrowRight size={17} className="shrink-0 motion-safe:transition-transform motion-safe:group-hover:translate-x-1" aria-hidden="true" />
@@ -82,13 +82,13 @@ export function ServicesOverview() {
           ))}
         </ul>
 
-        <div className="mt-12 text-center">
+        <div className="mt-8 text-center">
           <p className="text-base leading-[1.85] text-[#c3cbde]">
             Each service works on its own. Together, they become the WebDashy System.
           </p>
           <Link
             href="/services"
-            className="mt-6 inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#a4ff4f] px-7 py-4 text-sm font-bold text-[#1b2951] transition-colors hover:bg-[#94ef40] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#a4ff4f]"
+            className="mt-4 inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-[#a4ff4f] px-7 py-4 text-sm font-bold text-[#1b2951] transition-colors hover:bg-[#94ef40] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#a4ff4f]"
           >
             View All Services <ArrowRight size={17} aria-hidden="true" />
           </Link>

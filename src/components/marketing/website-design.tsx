@@ -8,8 +8,6 @@ import styles from "./website-design.module.css";
 const benefits = [
   { title: "Mobile-Friendly Design", description: "Looks professional and works smoothly on phones, tablets, and desktops.", icon: Smartphone },
   { title: "Built To Convert", description: "Clear calls-to-action help visitors take the next step instead of leaving.", icon: MousePointer2 },
-  { title: "Lead Capture Built In", description: "Forms, calls, and chat feed directly into your customer follow-up system.", icon: MessageCircle },
-  { title: "Designed For Local Businesses", description: "Built around the way service businesses actually get calls, inquiries, and appointments.", icon: House },
   { title: "Connected To Automation", description: "Your website works with follow-up, reviews, and re-marketing instead of sitting alone.", icon: PlugZap },
 ];
 
@@ -73,20 +71,20 @@ function WebsitePreview() {
 
 export function WebsiteDesign() {
   return (
-    <section aria-labelledby="website-design-heading" className="border-t border-[#1b2951]/10 bg-[#f5f6f3] py-20 text-[#1b2951] sm:py-24 lg:py-28">
+    <section aria-labelledby="website-design-heading" className="border-t border-[#1b2951]/10 bg-[#f5f6f3] py-14 text-[#1b2951] sm:py-16 lg:py-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-10">
         <div className="mx-auto max-w-3xl text-center">
           <p className="flex items-center justify-center gap-3 text-[10px] font-bold tracking-[0.16em] uppercase sm:text-xs"><span aria-hidden="true" className="h-0.5 w-7 bg-[#a4ff4f]" />YOUR DIGITAL FRONT DOOR</p>
           <h2 id="website-design-heading" className="mt-6 text-[clamp(2rem,3.6vw,3.25rem)] leading-[1.15] font-extrabold tracking-[-0.045em] text-balance">A Better Website Is Where Better Follow-Up Starts.</h2>
           <p className="mt-6 text-base leading-[1.85] text-[#606a7d] sm:text-[17px]">Your website should do more than look good. WebDashy builds modern, mobile-friendly websites designed to earn trust, guide visitors toward action, and connect directly into your follow-up system.</p>
         </div>
-        <div className="mt-12 grid items-center gap-12 lg:mt-16 lg:grid-cols-[1.12fr_1fr] lg:gap-14">
+        <div className="mt-8 grid items-center gap-8 lg:mt-10 lg:grid-cols-[1.12fr_1fr] lg:gap-14">
           <WebsitePreview />
           <div>
             <p className="mb-3 flex items-center gap-2 text-xs font-bold text-[#42602d]"><Check size={16} aria-hidden="true" /> A professionally built website. Included in every plan.</p>
             <ul className="divide-y divide-[#1b2951]/10">
               {benefits.map(({ title, description, icon: Icon }) => (
-                <li key={title} className="flex gap-4 py-5">
+                <li key={title} className="flex gap-4 py-4">
                   <Icon className="mt-0.5 shrink-0 text-[#426da9]" size={22} strokeWidth={1.65} aria-hidden="true" />
                   <div><h3 className="text-base font-bold tracking-[-0.02em] sm:text-lg">{title}</h3><p className="mt-1.5 text-sm leading-[1.8] text-[#606a7d]">{description}</p></div>
                 </li>
