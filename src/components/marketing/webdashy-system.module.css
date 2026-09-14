@@ -1,0 +1,139 @@
+.diagram {
+  margin-top: 3.5rem;
+  padding: 2.5rem 1rem;
+  border: 1px solid rgb(27 41 81 / 9%);
+  border-radius: 2rem;
+  background:
+    radial-gradient(ellipse at 50% 65%, rgb(164 255 79 / 12%), transparent 45%),
+    radial-gradient(circle, rgb(27 41 81 / 8%) 1px, transparent 1px),
+    #f7f9fc;
+  background-size: auto, 24px 24px, auto;
+}
+
+.flow {
+  position: relative;
+  max-width: 38rem;
+  margin-inline: auto;
+}
+
+.services {
+  position: relative;
+  display: grid;
+  gap: 1rem;
+  padding-left: 2rem;
+}
+
+/* Each stacked service joins the same rail, which curves into the app. */
+.services::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid #7c9ac8;
+}
+
+.service {
+  position: relative;
+  min-width: 0;
+  padding: 1.5rem;
+  border: 1px solid rgb(27 41 81 / 10%);
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 8px 24px -16px rgb(27 41 81 / 22%);
+}
+
+.service::before {
+  content: "";
+  position: absolute;
+  width: 2rem;
+  height: 1.25rem;
+  left: calc(-2rem - 1px);
+  top: 2rem;
+  border-top: 2px solid #7c9ac8;
+  border-left: 2px solid #7c9ac8;
+  border-top-left-radius: 1rem;
+}
+
+.icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border: 1px solid rgb(66 109 169 / 10%);
+  border-radius: 0.875rem;
+  color: #426da9;
+  background: #edf3fb;
+}
+
+.companion {
+  position: absolute;
+  right: -0.3rem;
+  bottom: -0.1rem;
+  padding: 2px;
+  box-sizing: content-box;
+  border-radius: 0.4rem;
+  background: #a4ff4f;
+  color: #1b2951;
+}
+
+.connections { display: none; }
+
+.mobileConnection {
+  position: relative;
+  height: 3.5rem;
+  width: 50%;
+  border-left: 2px solid #7c9ac8;
+  border-bottom: 2px solid #7c9ac8;
+  border-bottom-left-radius: 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.mobileConnection::before {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: 100%;
+  height: 1.75rem;
+  border-right: 2px solid #426da9;
+}
+
+.mobileConnection::after {
+  content: "";
+  position: absolute;
+  right: -5px;
+  bottom: -1.75rem;
+  width: 10px;
+  height: 10px;
+  border-right: 2px solid #426da9;
+  border-bottom: 2px solid #426da9;
+  transform: rotate(45deg);
+}
+
+.app {
+  position: relative;
+  max-width: 27rem;
+  margin-inline: auto;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  border: 1px solid rgb(27 41 81 / 16%);
+  border-top: 3px solid #a4ff4f;
+  border-radius: 1.5rem;
+  background: white;
+  box-shadow: 0 18px 48px -24px rgb(27 41 81 / 30%);
+}
+
+@media (min-width: 640px) {
+  .diagram { padding: 3rem 2rem; }
+}
+
+@media (min-width: 1024px) {
+  .diagram { padding: 3.5rem 1.25rem; }
+  .flow { max-width: none; }
+  .services { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 0; }
+  .service { margin-inline: 0.75rem; padding: 1.75rem 1.25rem; }
+  .services::before, .service::before, .mobileConnection { display: none; }
+  .connections { display: block; width: 100%; height: 160px; overflow: visible; }
+}
