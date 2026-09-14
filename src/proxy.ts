@@ -1,17 +1,36 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
-// Protects every admin route. The marketing homepage (/), public portal (/p/[token]), the delivery
+// Protects every admin route. The approved marketing pages, public portal (/p/[token]), the delivery
 // review page (/r/[token]), the design questionnaire (/q/[token]), the auth
 // routes, and the leads webhook are explicitly excluded — see
 // ARCHITECTURE.md §6: every page/route excluded here must never require
 // login and must check its own security instead (an unguessable token for
 // /p, /r, and /q, a static API key for /api/leads — see that route's own
 // comment).
+const publicMarketingRoutes = new Set([
+  "/",
+  "/services",
+  "/services/website-design",
+  "/services/automation",
+  "/services/review-automation",
+  "/services/text-remarketing",
+  "/how-it-works",
+  "/pricing",
+  "/industries",
+  "/about",
+  "/contact",
+  "/book-a-demo",
+  "/faq",
+  "/privacy",
+  "/terms",
+]);
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   if (
+    publicMarketingRoutes.has(pathname) ||
     pathname.startsWith("/login") ||
     pathname.startsWith("/setup") ||
     pathname.startsWith("/forgot-password") ||
