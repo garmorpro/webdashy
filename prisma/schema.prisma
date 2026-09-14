@@ -96,6 +96,39 @@ model TemplateTag {
   @@id([templateId, tagId])
 }
 
+// --- Business prospecting ---
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  INTERESTED
+  FOLLOW_UP
+  WON
+  LOST
+}
+
+model Lead {
+  id                String     @id @default(cuid())
+  businessName      String
+  phone             String?
+  email             String?
+  website           String?
+  address           String?
+  city              String?
+  googleMapsUrl     String?
+  businessCategory  String?
+  googleRating      Decimal?   @db.Decimal(2, 1)
+  googleReviewCount Int?
+  status            LeadStatus @default(NEW)
+  notes             String?
+  lastContactedAt   DateTime?  @db.Date
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+}
+
 // --- Clients CRM ---
 
 // Mirrors the 8-step pipeline (Add Lead → Contact → Portal Sent →

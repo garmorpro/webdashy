@@ -3,6 +3,7 @@ import {
   LayoutDashboard,
   LayoutTemplate,
   Users,
+  MapPin,
   HeartHandshake,
   Settings,
 } from "lucide-react";
@@ -23,6 +24,7 @@ export type NavItem = {
 export const navItems: NavItem[] = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
   { title: "Templates", href: "/templates", icon: LayoutTemplate },
+  { title: "Leads", href: "/leads", icon: MapPin },
   { title: "Clients", href: "/clients", icon: Users },
   { title: "Client Care", href: "/client-care", icon: HeartHandshake },
 ];
