@@ -1,0 +1,38 @@
+.workflow {
+  width: 100%;
+  min-width: 0;
+  max-width: 42rem;
+  margin-inline: auto;
+  overflow: hidden;
+  border: 1px solid #ffffff24;
+  border-radius: 1.5rem;
+  background: radial-gradient(ellipse at top left, #a4ff4f0a, transparent 65%), #152140;
+  box-shadow: 0 24px 60px -30px #080f28;
+}
+.workflowHeader { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 1.25rem 1.75rem; border-bottom: 1px solid #ffffff14; }
+.workflowLabel { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 600; }
+.workflowLabel svg { color: #a4ff4f; flex-shrink: 0; }
+.example { color: #aab8cf; font-size: 0.625rem; letter-spacing: 0.06em; text-transform: uppercase; }
+.timeline { padding: 1.75rem; list-style: none; }
+.step { position: relative; display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: 1rem; padding-bottom: 2rem; }
+.step:last-child { padding-bottom: 0; }
+.step:not(:last-child)::before { content: ""; position: absolute; left: calc(1.25rem - 0.5px); top: 2.5rem; bottom: 0; width: 1px; background: #a4ff4f45; }
+.node { position: relative; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 1px solid #ffffff26; border-radius: 0.8rem; background: #253354; color: #d6e0f0; }
+.highlight { border-color: #a4ff4f66; background: #283e32; color: #a4ff4f; }
+.stepContent { min-width: 0; padding-top: 0.5rem; }
+.stepHeading { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.stepHeading h3 { font-size: 0.875rem; font-weight: 700; line-height: 1.5; letter-spacing: -0.015em; }
+.auto { display: inline-flex; align-items: center; gap: 3px; border-radius: 1rem; padding: 2px 7px; background: #a4ff4f; color: #1b2951; font-size: 0.625rem; font-weight: 800; }
+.detail { margin-top: 0.35rem; color: #b7c4d9; font-size: 0.75rem; line-height: 1.7; }
+.message { max-width: 19rem; margin-top: 0.85rem; padding: 0.9rem 1rem; border-radius: 1rem 1rem 1rem 0.25rem; background: #edf8e5; color: #1b2951; font-size: 0.875rem; line-height: 1.7; }
+.reply { width: fit-content; margin-left: auto; border: 1px solid #ffffff26; border-radius: 1rem 1rem 0.25rem 1rem; background: #2a395c; color: #fff; }
+.sent { display: flex; align-items: center; gap: 4px; margin-top: 0.5rem; font-size: 0.625rem; color: #b8d9a5; }
+.connector { position: absolute; left: calc(1.25rem - 7px); bottom: 0.5rem; background: #152140; color: #a4ff4f; }
+.workflowFooter { display: flex; align-items: center; gap: 0.6rem; padding: 1rem 1.75rem; border-top: 1px solid #ffffff14; color: #c8d8bd; font-size: 0.75rem; line-height: 1.7; }
+.workflowFooter svg { flex-shrink: 0; color: #a4ff4f; }
+@media (max-width: 479px) {
+  .workflowHeader, .workflowFooter { padding-inline: 1rem; }
+  .timeline { padding: 1.5rem 1rem; }
+  .step { gap: 0.75rem; }
+  .message { padding: 0.75rem; }
+}
